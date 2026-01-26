@@ -1,9 +1,8 @@
 import React from 'react';
 import { Theme } from '../types.ts';
-import { Heart, ShieldCheck, Zap, Beaker, Share2 } from 'lucide-react';
+import { Heart, ShieldCheck, Zap, Beaker } from 'lucide-react';
 import Logo from './Logo.tsx';
 import { APP_CONFIG } from '../config.ts';
-import { Share } from '@capacitor/share';
 
 interface AboutProps { theme: Theme; }
 
@@ -24,18 +23,6 @@ const About: React.FC<AboutProps> = ({ theme }) => {
           isEarning = true;
       }
   }
-
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        title: 'Weight Price Smart Calc',
-        text: 'Hey! Check out this smart app to calculate Item Price by Weight instantly. Use it for market shopping!',
-        dialogTitle: 'Share App with Friends',
-      });
-    } catch (error) {
-      console.log('Error sharing:', error);
-    }
-  };
 
   return (
     <div className="space-y-4 pb-8 animate-in fade-in duration-700 pt-2">
@@ -63,14 +50,6 @@ const About: React.FC<AboutProps> = ({ theme }) => {
              <span className="text-[9px] font-black uppercase tracking-wider">{adMode}</span>
          </div>
       </div>
-
-      {/* Share Button (New Feature for Offline Distribution) */}
-      <button 
-        onClick={handleShare}
-        className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-indigo-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
-      >
-        <Share2 size={18} /> Share App with Friends
-      </button>
 
       {/* Card 2: National Pride */}
       <div className={`p-8 rounded-[2.5rem] border overflow-hidden relative flex flex-col items-center text-center ${
