@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sun, Moon, MoreVertical, Calculator as CalcIcon, History as HistIcon, Sparkles, Info } from 'lucide-react';
+import { Sun, Moon, MoreVertical, Calculator as CalcIcon, History as HistIcon, Sparkles, Info, Share2 } from 'lucide-react';
 import { Theme } from '../types.ts';
 import Logo from './Logo.tsx';
+import { Share } from '@capacitor/share';
 
 interface HeaderProps {
   theme: Theme;
@@ -29,6 +30,18 @@ const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onNavigate, curre
     setIsMenuOpen(false);
   };
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        title: 'Weight Price Smart Calc',
+        text: 'Hey! I use this smart app to verify market prices by weight. Check it out!',
+        dialogTitle: 'Share App',
+      });
+    } catch (error) {
+      console.log('Share failed', error);
+    }
+  };
+
   return (
     <header className="flex items-center justify-between relative shrink-0">
       <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleNav('calc')}>
@@ -42,6 +55,17 @@ const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onNavigate, curre
       </div>
 
       <div className="flex items-center gap-1">
+        {/* Share Button (New Position) */}
+        <button
+          onClick={handleShare}
+          className={`p-2 rounded-lg theme-transition ${
+            theme === 'dark' ? 'text-emerald-400 hover:bg-slate-800' : 'text-emerald-600 hover:bg-slate-100'
+          }`}
+        >
+          <Share2 size={18} />
+        </button>
+
+        {/* Theme Toggle */}
         <button
           onClick={onToggleTheme}
           className={`p-2 rounded-lg theme-transition ${
@@ -51,6 +75,7 @@ const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onNavigate, curre
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
+        {/* Menu */}
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
