@@ -7,6 +7,7 @@ import History from './components/History.tsx';
 import Insights from './components/Insights.tsx';
 import About from './components/About.tsx';
 import AdMobBanner from './components/AdMobBanner.tsx';
+import PrivacyConsent from './components/PrivacyConsent.tsx';
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -24,6 +25,30 @@ const App: React.FC = () => {
   });
   
   const [activeTab, setActiveTab] = useState<'calc' | 'history' | 'insights' | 'about'>('calc');
+
+  // Privacy Policy Acceptance State
+  const [privacyAccepted, setPrivacyAccepted] = useState<boolean>(true);
+
+  useEffect(() => {
+    try {
+        const accepted = localStorage.getItem('privacy_policy_accepted');
+        if (accepted !== 'true') {
+            setPrivacyAccepted(false);
+        }
+    } catch (e) {
+        setPrivacyAccepted(false);
+    }
+  }, []);
+
+  const handleAcceptPrivacy = () => {
+      try {
+          localStorage.setItem('privacy_policy_accepted', 'true');
+          setPrivacyAccepted(true);
+      } catch (e) {
+          console.error("Storage failed", e);
+          setPrivacyAccepted(true); // Allow usage even if storage fails
+      }
+  };
 
   useEffect(() => {
     try {
@@ -61,47 +86,54 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`fixed inset-0 flex flex-col ${theme === 'dark' ? 'bg-[#020617] text-slate-100' : 'bg-[#ffffff] text-slate-900'}`}>
-      <div className="max-w-md mx-auto w-full h-full flex flex-col pt-6 overflow-hidden relative shadow-2xl">
-        <div className="px-5 shrink-0">
-          <Header 
-            theme={theme} 
-            onToggleTheme={toggleTheme} 
-            onNavigate={(tab) => setActiveTab(tab)} 
-            currentTab={activeTab} 
-          />
-        </div>
-        
-        <main className="flex-grow flex flex-col overflow-hidden mt-4 relative">
-          {activeTab === 'calc' && (
-            <div className="flex flex-col h-full overflow-hidden px-5">
-              <div className="flex-grow overflow-y-auto no-scrollbar space-y-4 pb-4">
-                <Calculator 
-                  theme={theme} 
-                  onAddToCart={addToCart} 
-                  history={history} 
-                />
-                <Cart 
-                  theme={theme} 
-                  items={cart} 
-                  onRemove={removeFromCart} 
-                  onCheckout={checkout} 
-                />
-              </div>
-            </div>
-          )}
-          
-          <div className="flex-grow overflow-y-auto no-scrollbar px-5">
-            {activeTab === 'history' && <History theme={theme} history={history} />}
-            {activeTab === 'insights' && <Insights theme={theme} history={history} />}
-            {activeTab === 'about' && <About theme={theme} />}
-          </div>
-        </main>
+    <>
+      {/* Privacy Consent Modal - Shows only if not accepted */}
+      {!privacyAccepted && (
+        <PrivacyConsent theme={theme} onAccept={handleAcceptPrivacy} />
+      )}
 
-        {/* AdMob Banner Area - Fixed at Bottom */}
-        <AdMobBanner theme={theme} />
+      <div className={`fixed inset-0 flex flex-col ${theme === 'dark' ? 'bg-[#020617] text-slate-100' : 'bg-[#ffffff] text-slate-900'}`}>
+        <div className="max-w-md mx-auto w-full h-full flex flex-col pt-6 overflow-hidden relative shadow-2xl">
+          <div className="px-5 shrink-0">
+            <Header 
+              theme={theme} 
+              onToggleTheme={toggleTheme} 
+              onNavigate={(tab) => setActiveTab(tab)} 
+              currentTab={activeTab} 
+            />
+          </div>
+          
+          <main className="flex-grow flex flex-col overflow-hidden mt-4 relative">
+            {activeTab === 'calc' && (
+              <div className="flex flex-col h-full overflow-hidden px-5">
+                <div className="flex-grow overflow-y-auto no-scrollbar space-y-4 pb-4">
+                  <Calculator 
+                    theme={theme} 
+                    onAddToCart={addToCart} 
+                    history={history} 
+                  />
+                  <Cart 
+                    theme={theme} 
+                    items={cart} 
+                    onRemove={removeFromCart} 
+                    onCheckout={checkout} 
+                  />
+                </div>
+              </div>
+            )}
+            
+            <div className="flex-grow overflow-y-auto no-scrollbar px-5">
+              {activeTab === 'history' && <History theme={theme} history={history} />}
+              {activeTab === 'insights' && <Insights theme={theme} history={history} />}
+              {activeTab === 'about' && <About theme={theme} />}
+            </div>
+          </main>
+
+          {/* AdMob Banner Area - Fixed at Bottom */}
+          <AdMobBanner theme={theme} />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
