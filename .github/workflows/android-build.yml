@@ -32,6 +32,23 @@ jobs:
       - name: Build Web App
         run: npm run build
 
+      # NEW STEP: Generates the config file automatically
+      - name: Create Capacitor Config
+        run: |
+          echo '{
+            "appId": "com.weightprice.smartcalc",
+            "appName": "Weight Price Smart Calc",
+            "webDir": "dist",
+            "server": {
+              "androidScheme": "https"
+            },
+            "plugins": {
+              "AdMob": {
+                "androidAppId": "ca-app-pub-3940256099942544~3347511713" 
+              }
+            }
+          }' > capacitor.config.json
+
       - name: Initialize Android
         run: |
           npm install @capacitor/android
