@@ -22,7 +22,7 @@ const About: React.FC<AboutProps> = ({ theme }) => {
          </div>
          
          <h2 className="text-xl font-outfit font-black tracking-tight mb-1">WeightPrice</h2>
-         <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">Smart Calc v1.1</p>
+         <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">Smart Calc v1.2</p>
       </div>
 
       {/* Card 2: National Pride */}
