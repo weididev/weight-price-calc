@@ -1,13 +1,42 @@
 import React from 'react';
 import { Theme } from '../types.ts';
-import { Calendar, Heart, ShieldCheck, Download } from 'lucide-react';
+import { Heart, ShieldCheck, Zap, Beaker, Share2 } from 'lucide-react';
 import Logo from './Logo.tsx';
+import { APP_CONFIG } from '../config.ts';
+import { Share } from '@capacitor/share';
 
 interface AboutProps { theme: Theme; }
 
 const About: React.FC<AboutProps> = ({ theme }) => {
   const isDark = theme === 'dark';
   
+  const { enableRealAds, realBannerId } = APP_CONFIG.ads;
+  
+  // Determine display status
+  let adMode = "Test Mode (Safe)";
+  let isEarning = false;
+
+  if (enableRealAds) {
+      if (realBannerId.includes('xxxx')) {
+          adMode = "Setup In Progress";
+      } else {
+          adMode = "Live Ads (Active)";
+          isEarning = true;
+      }
+  }
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        title: 'Weight Price Smart Calc',
+        text: 'Hey! Check out this smart app to calculate Item Price by Weight instantly. Use it for market shopping!',
+        dialogTitle: 'Share App with Friends',
+      });
+    } catch (error) {
+      console.log('Error sharing:', error);
+    }
+  };
+
   return (
     <div className="space-y-4 pb-8 animate-in fade-in duration-700 pt-2">
       {/* Card 1: App Info */}
@@ -22,8 +51,26 @@ const About: React.FC<AboutProps> = ({ theme }) => {
          </div>
          
          <h2 className="text-xl font-outfit font-black tracking-tight mb-1">WeightPrice</h2>
-         <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">Smart Calc v1.2</p>
+         <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">Smart Calc v{APP_CONFIG.version}</p>
+
+         {/* Ad Status Indicator */}
+         <div className={`mt-4 px-3 py-1 rounded-full border flex items-center gap-1.5 ${
+             isEarning 
+             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
+             : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+         }`}>
+             {isEarning ? <Zap size={10} fill="currentColor" /> : <Beaker size={10} />}
+             <span className="text-[9px] font-black uppercase tracking-wider">{adMode}</span>
+         </div>
       </div>
+
+      {/* Share Button (New Feature for Offline Distribution) */}
+      <button 
+        onClick={handleShare}
+        className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-indigo-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+      >
+        <Share2 size={18} /> Share App with Friends
+      </button>
 
       {/* Card 2: National Pride */}
       <div className={`p-8 rounded-[2.5rem] border overflow-hidden relative flex flex-col items-center text-center ${
