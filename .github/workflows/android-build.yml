@@ -1,0 +1,67 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Web App
+        run: npm run build
+
+      - name: Initialize Android
+        run: |
+          npm install @capacitor/android
+          npx cap add android
+          npx cap sync
+
+      # THIS STEP INJECTS YOUR ADMOB ID into the App Manifest
+      - name: Configure AdMob
+        run: |
+          sed -i 's|<application|<application>\n        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>|' android/app/src/main/AndroidManifest.xml
+
+      - name: Build Debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Build Release Bundle (AAB)
+        run: |
+          cd android
+          ./gradlew bundleRelease
+
+      - name: Upload APK (For Testing)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload AAB (For Play Store)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: android/app/build/outputs/bundle/release/app-release.aab
