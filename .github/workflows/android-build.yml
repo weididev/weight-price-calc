@@ -44,16 +44,31 @@ jobs:
         run: |
           sed -i 's|</application>|        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-2018579775913448~9911402503"/>\n    </application>|' android/app/src/main/AndroidManifest.xml
 
-      # Build both APK and AAB (Debug versions)
-      - name: Build APK and AAB
+      # Generate Upload Keystore (Crucial for Play Store Acceptance)
+      - name: Generate Signing Keystore
+        run: |
+          keytool -genkey -v -keystore android/app/upload-keystore.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=WeightPrice, OU=App, O=Org, L=City, ST=State, C=IN"
+
+      # Build Release Versions (Signed)
+      - name: Build Signed Release APK & AAB
         run: |
           cd android
-          ./gradlew assembleDebug bundleDebug
+          ./gradlew assembleRelease bundleRelease \
+            -Pandroid.injected.signing.store.file=$(pwd)/app/upload-keystore.jks \
+            -Pandroid.injected.signing.store.password=android \
+            -Pandroid.injected.signing.key.alias=upload \
+            -Pandroid.injected.signing.key.password=android
+
+      # Rename files for clarity
+      - name: Rename Files
+        run: |
+          mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/For-Phone-Real-Ads.apk
+          mv android/app/build/outputs/bundle/release/app-release.aab android/app/build/outputs/bundle/release/For-Play-Store.aab
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Android-Builds
           path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/app/build/outputs/bundle/debug/app-debug.aab
+            android/app/build/outputs/apk/release/For-Phone-Real-Ads.apk
+            android/app/build/outputs/bundle/release/For-Play-Store.aab
