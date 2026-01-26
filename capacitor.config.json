@@ -1,0 +1,13 @@
+{
+  "appId": "com.weightprice.smartcalc",
+  "appName": "Weight Price Smart Calc",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "AdMob": {
+      "androidAppId": "ca-app-pub-3940256099942544~3347511713" 
+    }
+  }
+}
