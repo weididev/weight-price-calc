@@ -39,20 +39,18 @@ jobs:
           npx cap add android
           npx cap sync
 
-      # Inject AdMob App ID (Currently using Test ID)
+      # Inject AdMob App ID (Using Real Production ID)
       - name: Configure AdMob in Manifest
         run: |
-          sed -i 's|</application>|        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>\n    </application>|' android/app/src/main/AndroidManifest.xml
+          sed -i 's|</application>|        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-2018579775913448~9911402503"/>\n    </application>|' android/app/src/main/AndroidManifest.xml
 
       # Build both APK and AAB (Debug versions)
       - name: Build APK and AAB
         run: |
           cd android
-          chmod +x gradlew
           ./gradlew assembleDebug bundleDebug
 
-      # Upload both files so you can download them
-      - name: Upload Artifacts (APK & AAB)
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Android-Builds
