@@ -61,10 +61,10 @@ const About: React.FC<AboutProps> = ({ theme }) => {
         </div>
       </div>
 
-      {/* Privacy Policy Link */}
+      {/* Privacy Policy Link - Relative path for compatibility */}
       <div className="flex justify-center">
         <a 
-          href="/privacy.html" 
+          href="privacy.html" 
           target="_blank" 
           rel="noopener noreferrer"
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors ${
