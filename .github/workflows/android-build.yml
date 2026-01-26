@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK (Cloud)
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -29,56 +29,32 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build Web App
+      - name: Build Web Code
         run: npm run build
 
-      # NEW STEP: Generates the config file automatically
-      - name: Create Capacitor Config
-        run: |
-          echo '{
-            "appId": "com.weightprice.smartcalc",
-            "appName": "Weight Price Smart Calc",
-            "webDir": "dist",
-            "server": {
-              "androidScheme": "https"
-            },
-            "plugins": {
-              "AdMob": {
-                "androidAppId": "ca-app-pub-3940256099942544~3347511713" 
-              }
-            }
-          }' > capacitor.config.json
-
+      # Step 1: Initialize Android Project (Cloud Server par Android folder banayega)
       - name: Initialize Android
         run: |
           npm install @capacitor/android
           npx cap add android
           npx cap sync
 
-      # THIS STEP INJECTS YOUR ADMOB ID into the App Manifest
-      - name: Configure AdMob
+      # Step 2: Inject AdMob App ID (Bina Laptop ke XML file edit karna)
+      # Hum 'Test ID' use kar rahe hain. Jab Real ID lagani ho, to yahan change karein.
+      - name: Configure AdMob in Manifest
         run: |
-          sed -i 's|<application|<application>\n        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>|' android/app/src/main/AndroidManifest.xml
+          sed -i 's|</application>|        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>\n    </application>|' android/app/src/main/AndroidManifest.xml
 
+      # Step 3: APK Build Karna
       - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Build Release Bundle (AAB)
-        run: |
-          cd android
-          ./gradlew bundleRelease
-
-      - name: Upload APK (For Testing)
+      # Step 4: APK Upload Karna (Taaki aap download kar sako)
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: WeightPrice-App-Debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Upload AAB (For Play Store)
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release
-          path: android/app/build/outputs/bundle/release/app-release.aab
