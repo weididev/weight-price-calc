@@ -28,8 +28,11 @@ const Cart: React.FC<CartProps> = ({ theme, items, onRemove, onCheckout }) => {
         {items.map((item) => (
           <div key={item.id} className={`shrink-0 flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-xl border ${theme === 'dark' ? 'bg-slate-950 border-slate-800' : 'bg-slate-50'}`}>
             <div className="flex flex-col">
-              <span className="text-[8px] font-black uppercase text-slate-500 truncate max-w-[60px]">{item.name}</span>
-              <span className="text-[10px] font-bold text-sky-500">₹{item.price.toFixed(0)}</span>
+              <span className="text-[8px] font-black uppercase text-slate-500 truncate max-w-[80px]">{item.name}</span>
+              <div className="flex items-baseline gap-1 text-[10px] font-bold text-sky-500">
+                <span>₹{item.price.toFixed(0)}</span>
+                <span className={`text-[9px] font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{item.weight}{item.unit}</span>
+              </div>
             </div>
             <button onClick={() => onRemove(item.id)} className="p-1 text-slate-700 hover:text-rose-500 transition-colors">
               <X size={12} />
