@@ -124,7 +124,7 @@ const App: React.FC = () => {
             
             <div className="flex-grow overflow-y-auto no-scrollbar px-5">
               {activeTab === 'history' && <History theme={theme} history={history} />}
-              {activeTab === 'insights' && <Insights theme={theme} history={history} />}
+              {activeTab === 'insights' && <Insights theme={theme} history={history} onImportHistory={setHistory} />}
               {activeTab === 'about' && <About theme={theme} />}
             </div>
           </main>
