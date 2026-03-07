@@ -27,14 +27,15 @@ const Calculator: React.FC<CalculatorProps> = ({ theme, onAddToCart, history }) 
 
   const historicalNames = useMemo(() => {
     const names = new Set<string>();
-    history.forEach(order => order.items.forEach(item => names.add(item.name.toUpperCase())));
+    history.forEach(order => order.items.forEach(item => names.add(item.name.trim().toUpperCase())));
     return Array.from(names);
   }, [history]);
 
   const filteredSuggestions = useMemo(() => {
-    if (!itemName) return [];
+    const searchName = itemName.trim().toUpperCase();
+    if (!searchName) return [];
     return historicalNames.filter(name => 
-      name.includes(itemName.toUpperCase()) && name !== itemName.toUpperCase()
+      name.includes(searchName) && name !== searchName
     );
   }, [itemName, historicalNames]);
 
@@ -45,12 +46,13 @@ const Calculator: React.FC<CalculatorProps> = ({ theme, onAddToCart, history }) 
   }, [baseWeight, basePrice, baseUnit]);
 
   const priceAnalytics = useMemo(() => {
-    if (!itemName.trim() || !currentRatePerGram) return null;
+    const searchName = itemName.trim().toUpperCase();
+    if (!searchName || !currentRatePerGram) return null;
     
     const itemHistory: number[] = [];
     history.forEach(order => {
       order.items.forEach(item => {
-        if (item.name.toUpperCase() === itemName.toUpperCase()) {
+        if (item.name.trim().toUpperCase() === searchName) {
           const w = (item.unit === 'kg') ? parseFloat(item.weight) * 1000 : parseFloat(item.weight);
           if (w > 0) itemHistory.push(item.price / w);
         }
