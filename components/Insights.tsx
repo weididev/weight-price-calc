@@ -472,4 +472,147 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, onImportHistory }) 
           {/* Monthly Chart */}
           {data.monthlyChartData.length > 0 && (
             <div className={cardClass}>
-              <h3 className="font-bold text-sm mb-4 flex items-center gap-2
+              <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
+                <BarChart3 size={16} className="text-sky-500" /> Monthly Expenses
+              </h3>
+              <div className="h-40 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.monthlyChartData}>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: theme === 'dark' ? '#1e293b' : '#fff', borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      itemStyle={{ color: '#0ea5e9', fontWeight: 'bold' }}
+                    />
+                    <Bar dataKey="value" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Inflation & Volatility */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className={`p-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/20 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+              <TrendingUp size={16} className={`${data.inflationRate > 0 ? 'text-rose-500' : 'text-emerald-500'} mb-2`} />
+              <p className={`text-[10px] font-black uppercase ${textMuted}`}>Personal Inflation</p>
+              <p className={`text-lg font-bold mt-1 ${data.inflationRate > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                {data.inflationRate > 0 ? '+' : ''}{data.inflationRate.toFixed(1)}%
+              </p>
+            </div>
+            {data.volatility && (
+              <div className={`p-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/20 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                <Activity size={16} className="text-amber-500 mb-2" />
+                <p className={`text-[10px] font-black uppercase ${textMuted}`}>Most Volatile</p>
+                <p className="text-sm font-bold mt-1 capitalize truncate">{data.volatility.name}</p>
+                <p className={`text-[10px] ${textMuted}`}>Diff: ₹{data.volatility.diff.toFixed(0)}/kg</p>
+              </div>
+            )}
+          </div>
+
+          {/* Cheapest Buy */}
+          {data.cheapestBuy.price !== Infinity && (
+            <div className={cardClass}>
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-500">
+                  <ArrowDownRight size={20} />
+                </div>
+                <div>
+                  <p className={`text-[10px] font-black uppercase ${textMuted}`}>Cheapest Buy of the Year</p>
+                  <p className="text-sm font-bold">
+                    <span className="capitalize">{data.cheapestBuy.name}</span> at ₹{data.cheapestBuy.price.toFixed(0)}/kg
+                  </p>
+                  <p className={`text-[10px] ${textMuted}`}>{new Date(data.cheapestBuy.date).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ALERTS TAB */}
+      {activeTab === 'alerts' && (
+        <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+          
+          {/* Price Drops */}
+          {data.priceDrops.length > 0 && (
+            <div className={`p-4 rounded-3xl border ${theme === 'dark' ? 'bg-emerald-900/20 border-emerald-900/50' : 'bg-emerald-50 border-emerald-100'}`}>
+              <div className="flex items-center gap-2 text-emerald-500 mb-3">
+                <ArrowDownRight size={18} />
+                <h3 className="font-bold text-sm">Massive Price Drops!</h3>
+              </div>
+              <div className="space-y-2">
+                {data.priceDrops.map(drop => (
+                  <div key={drop.name} className="flex items-center justify-between text-sm">
+                    <span className="capitalize font-medium">{drop.name}</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{drop.dropPercent}% Cheaper</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Ghost Expenses */}
+          {data.ghostExpenses.length > 0 && (
+            <div className={cardClass}>
+              <div className="flex items-center gap-2 text-slate-500 mb-3">
+                <ShieldAlert size={16} />
+                <h3 className="font-bold text-sm">Ghost Expenses</h3>
+              </div>
+              <p className={`text-xs mb-3 ${textMuted}`}>Small items that add up to a lot over time.</p>
+              <div className="space-y-2">
+                {data.ghostExpenses.map(([name, stats]) => (
+                  <div key={name} className="flex items-center justify-between text-sm">
+                    <span className="capitalize font-medium">{name} ({stats.count} times)</span>
+                    <span className="font-bold text-rose-500">₹{stats.totalSpent.toFixed(0)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Did You Forget */}
+          {data.forgotten && (
+            <div className={`p-4 rounded-3xl border ${theme === 'dark' ? 'bg-amber-900/20 border-amber-900/50' : 'bg-amber-50 border-amber-100'}`}>
+              <div className="flex items-center gap-2 text-amber-500 mb-2">
+                <AlertTriangle size={18} />
+                <h3 className="font-bold text-sm">Did You Forget?</h3>
+              </div>
+              <p className="text-sm">
+                You usually buy <span className="font-bold capitalize">{data.forgotten[0]}</span> regularly, but it's been a while. Running low?
+              </p>
+            </div>
+          )}
+
+          {/* Stop Buying Warning */}
+          {data.overstocked && (
+            <div className={`p-4 rounded-3xl border ${theme === 'dark' ? 'bg-rose-900/20 border-rose-900/50' : 'bg-rose-50 border-rose-100'}`}>
+              <div className="flex items-center gap-2 text-rose-500 mb-2">
+                <AlertTriangle size={18} />
+                <h3 className="font-bold text-sm">Overstock Warning</h3>
+              </div>
+              <p className="text-sm">
+                You've bought <span className="font-bold capitalize">{data.overstocked[0]}</span> multiple times in the last 3 days. Do you really need more?
+              </p>
+            </div>
+          )}
+
+          {/* Frequently Bought Together */}
+          {data.topPair && (
+            <div className={cardClass}>
+              <div className="flex items-center gap-2 text-indigo-500 mb-2">
+                <Package size={16} />
+                <h3 className="font-bold text-sm">Perfect Match</h3>
+              </div>
+              <p className="text-sm">
+                You frequently buy <span className="font-bold capitalize">{data.topPair[0]}</span> together.
+              </p>
+            </div>
+          )}
+
+        </div>
+      )}
+      
+    </div>
+  );
+};
+
+export default Insights;
