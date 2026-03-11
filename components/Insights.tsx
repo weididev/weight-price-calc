@@ -9,6 +9,9 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, 
   BarChart, Bar, Cell
 } from 'recharts';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 
 interface InsightsProps {
   theme: Theme;
@@ -219,7 +222,7 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, onImportHistory }) 
     };
   }, [history]);
 
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
     if (!data) return;
     const headers = ['Order ID', 'Date', 'Item Name', 'Weight', 'Unit', 'Price (Rs)'];
     const rows = history.flatMap(order => 
@@ -238,11 +241,34 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, onImportHistory }) 
       ...rows.map(r => r.join(','))
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `Shopping_History_${new Date().toLocaleDateString('en-IN')}.csv`;
-    link.click();
+    const fileName = `Shopping_History_${new Date().getTime()}.csv`;
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: csvContent,
+          directory: Directory.Cache,
+          encoding: Encoding.UTF8,
+        });
+        
+        await Share.share({
+          title: 'Export Shopping History',
+          text: 'Here is my shopping history CSV file.',
+          url: result.uri,
+          dialogTitle: 'Save or Share CSV',
+        });
+      } catch (e) {
+        console.error('Export failed', e);
+        alert('Failed to export file. Please check permissions.');
+      }
+    } else {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
+      link.click();
+    }
   };
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -346,7 +372,7 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, onImportHistory }) 
                  theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                }`}
              >
-               <Upload size={14} /> Import History CSV
+               <Download size={14} /> Import History CSV
              </button>
           </div>
         )}
@@ -376,14 +402,14 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, onImportHistory }) 
                   theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                <Upload size={12} /> Import
+                <Download size={12} /> Import
               </button>
             </>
           )}
           <button onClick={exportToCSV} className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-3 py-1.5 rounded-full border transition-colors ${
             theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
           }`}>
-            <Download size={12} /> Export
+            <Upload size={12} /> Export
           </button>
         </div>
       </div>
