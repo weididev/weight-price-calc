@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sun, Moon, MoreVertical, Calculator as CalcIcon, History as HistIcon, Sparkles, Info, Share2 } from 'lucide-react';
+import { Sun, Moon, MoreVertical, Calculator as CalcIcon, History as HistIcon, Sparkles, Info, Share2, Clock } from 'lucide-react';
 import { Theme } from '../types.ts';
 import Logo from './Logo.tsx';
 import { Share } from '@capacitor/share';
+import TimeConverterModal from './TimeConverterModal.tsx';
 
 interface HeaderProps {
   theme: Theme;
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onNavigate, currentTab }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isTimeConverterOpen, setIsTimeConverterOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,9 +35,9 @@ const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onNavigate, curre
   const handleShare = async () => {
     try {
       await Share.share({
-        title: 'Weight Price Smart Calc',
-        text: 'Hey! I use this smart app to verify market prices by weight. Check it out!',
-        dialogTitle: 'Share App',
+        title: 'Weight Price Calculator',
+        text: 'Bhai, ye App try kar! Market mein Weight aur Price check karne ke liye best hai. (APK file ke liye mujhe message kar dena).',
+        dialogTitle: 'Share with Friends',
       });
     } catch (error) {
       console.log('Share failed', error);
@@ -100,6 +102,16 @@ const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onNavigate, curre
                 <Sparkles size={14} /> Insights
               </button>
               <div className={`h-[1px] ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`} />
+              
+              {/* New Time Converter Button */}
+              <button 
+                onClick={() => { setIsTimeConverterOpen(true); setIsMenuOpen(false); }} 
+                className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold hover:bg-indigo-500/10 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}
+              >
+                <Clock size={14} /> Time Converter
+              </button>
+              
+              <div className={`h-[1px] ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`} />
               <button onClick={() => handleNav('about')} className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold ${currentTab === 'about' ? 'text-rose-500' : ''} hover:bg-rose-500/10`}>
                 <Info size={14} /> About & Version
               </button>
@@ -107,6 +119,12 @@ const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onNavigate, curre
           )}
         </div>
       </div>
+
+      <TimeConverterModal 
+        theme={theme} 
+        isOpen={isTimeConverterOpen} 
+        onClose={() => setIsTimeConverterOpen(false)} 
+      />
     </header>
   );
 };
