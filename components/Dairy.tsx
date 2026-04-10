@@ -90,11 +90,10 @@ const Dairy: React.FC<DairyProps> = ({ theme, records, sellers, onUpdate, onUpda
       // Check if record for this date already exists
       const existingIdx = records.findIndex(r => r.date === date);
       if (existingIdx !== -1) {
-        if (confirm('Record for this date already exists. Overwrite?')) {
-          const updated = [...records];
-          updated[existingIdx] = recordData;
-          onUpdate(updated);
-        }
+        // Auto-overwrite for now to avoid confirm() which fails in iframes
+        const updated = [...records];
+        updated[existingIdx] = recordData;
+        onUpdate(updated);
       } else {
         onUpdate([...records, recordData]);
       }
@@ -164,15 +163,13 @@ const Dairy: React.FC<DairyProps> = ({ theme, records, sellers, onUpdate, onUpda
   };
 
   const deleteSeller = (id: string) => {
-    if (confirm('Delete this seller?')) {
-      onUpdateSellers(sellers.filter(s => s.id !== id));
-    }
+    // Removed confirm() as it fails in iframes
+    onUpdateSellers(sellers.filter(s => s.id !== id));
   };
 
   const deleteRecord = (id: string) => {
-    if (confirm('Delete this entry?')) {
-      onUpdate(records.filter(r => r.id !== id));
-    }
+    // Removed confirm() as it fails in iframes
+    onUpdate(records.filter(r => r.id !== id));
   };
 
   const changeMonth = (offset: number) => {
