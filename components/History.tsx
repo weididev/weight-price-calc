@@ -178,3 +178,4 @@ const History: React.FC<HistoryProps> = ({ theme, history, dairyRecords }) => {
 };
 
 export default History;
+
