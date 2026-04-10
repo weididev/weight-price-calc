@@ -6,6 +6,7 @@ import Cart from './components/Cart.tsx';
 import History from './components/History.tsx';
 import Insights from './components/Insights.tsx';
 import About from './components/About.tsx';
+import Dairy from './components/Dairy.tsx';
 import AdMobBanner from './components/AdMobBanner.tsx';
 import PrivacyConsent from './components/PrivacyConsent.tsx';
 
@@ -23,8 +24,22 @@ const App: React.FC = () => {
       return saved ? JSON.parse(saved) : [];
     } catch (e) { return []; }
   });
+
+  const [dairyRecords, setDairyRecords] = useState<DairyRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem('dairy_records');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
+
+  const [dairySellers, setDairySellers] = useState<DairySeller[]>(() => {
+    try {
+      const saved = localStorage.getItem('dairy_sellers');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
   
-  const [activeTab, setActiveTab] = useState<'calc' | 'history' | 'insights' | 'about'>('calc');
+  const [activeTab, setActiveTab] = useState<'calc' | 'history' | 'insights' | 'about' | 'dairy'>('calc');
 
   // Privacy Policy Acceptance State
   const [privacyAccepted, setPrivacyAccepted] = useState<boolean>(true);
@@ -63,6 +78,18 @@ const App: React.FC = () => {
       localStorage.setItem('purchase_history', JSON.stringify(history));
     } catch (e) {}
   }, [history]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dairy_records', JSON.stringify(dairyRecords));
+    } catch (e) {}
+  }, [dairyRecords]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dairy_sellers', JSON.stringify(dairySellers));
+    } catch (e) {}
+  }, [dairySellers]);
 
   const toggleTheme = () => setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   
@@ -123,8 +150,17 @@ const App: React.FC = () => {
             )}
             
             <div className="flex-grow overflow-y-auto no-scrollbar px-5">
-              {activeTab === 'history' && <History theme={theme} history={history} />}
-              {activeTab === 'insights' && <Insights theme={theme} history={history} onImportHistory={setHistory} />}
+              {activeTab === 'history' && <History theme={theme} history={history} dairyRecords={dairyRecords} />}
+              {activeTab === 'insights' && <Insights theme={theme} history={history} dairyRecords={dairyRecords} onImportHistory={setHistory} />}
+              {activeTab === 'dairy' && (
+                <Dairy 
+                  theme={theme} 
+                  records={dairyRecords} 
+                  sellers={dairySellers}
+                  onUpdate={setDairyRecords} 
+                  onUpdateSellers={setDairySellers}
+                />
+              )}
               {activeTab === 'about' && <About theme={theme} />}
             </div>
           </main>
