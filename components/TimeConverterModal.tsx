@@ -46,9 +46,9 @@ const TimeConverterModal: React.FC<TimeConverterModalProps> = ({ theme, isOpen, 
     let totalMinutes = hours * 60 + minutes;
 
     if (currentMode === 'Z2I') {
-      totalMinutes += 5 * 60 + 30; // Add 5:30 for IST
+      totalMinutes += 5 * 60 + 30; // Add 5:30
     } else {
-      totalMinutes -= 5 * 60 + 30; // Subtract 5:30 for ZULU
+      totalMinutes -= 5 * 60 + 30; // Subtract 5:30
     }
 
     // Handle day wrap around
@@ -79,6 +79,7 @@ const TimeConverterModal: React.FC<TimeConverterModalProps> = ({ theme, isOpen, 
     const val = e.target.value.replace(/\D/g, '');
     setMm(val);
     if (val.length === 0 && e.nativeEvent && (e.nativeEvent as InputEvent).inputType === 'deleteContentBackward') {
+        // If user presses backspace on empty MM, go back to HH
         hhRef.current?.focus();
     }
   };
