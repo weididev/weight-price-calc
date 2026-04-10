@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef } from 'react';
-import { Theme, PurchaseOrder, CartItem, getSafeId } from '../types.ts';
+import { Theme, PurchaseOrder, CartItem, getSafeId, DairyRecord } from '../types.ts';
 import { 
   TrendingUp, ShoppingBag, CreditCard, BarChart3, ArrowUpRight, 
   Download, Upload, AlertTriangle, Zap, Calendar, Package, ArrowDownRight, 
@@ -16,6 +16,7 @@ import { Capacitor } from '@capacitor/core';
 interface InsightsProps {
   theme: Theme;
   history: PurchaseOrder[];
+  dairyRecords: DairyRecord[];
   onImportHistory?: (history: PurchaseOrder[]) => void;
 }
 
@@ -26,15 +27,21 @@ const getNormalizedWeight = (weightStr: string, unit: string) => {
   return val;
 };
 
-const Insights: React.FC<InsightsProps> = ({ theme, history, onImportHistory }) => {
+const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImportHistory }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'alerts'>('overview');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const data = useMemo(() => {
-    if (history.length === 0) return null;
+    if (history.length === 0 && dairyRecords.length === 0) return null;
 
     let totalSpent = 0;
     let totalWeightKg = 0;
+    
+    // Add Dairy Spending
+    dairyRecords.forEach(r => {
+      totalSpent += (r.milkQty * r.milkPrice) + (r.waterQty * r.waterPrice);
+    });
+
     const itemStats: Record<string, { totalSpent: number, totalWeight: number, pricesPerKg: number[], dates: number[], count: number }> = {};
     const monthlyData: Record<string, number> = {};
     const weeklyData: Record<string, number> = {};
@@ -42,6 +49,41 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, onImportHistory }) 
     
     // For Frequently Bought Together
     const pairs: Record<string, number> = {};
+
+    // Add Dairy Spending to All Metrics
+    dairyRecords.forEach(r => {
+      const date = new Date(r.date);
+      const monthKey = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
+      const weekKey = `W${Math.ceil(date.getDate() / 7)} ${monthKey}`;
+      const cost = (r.milkQty * r.milkPrice) + (r.waterQty * r.waterPrice);
+      
+      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + cost;
+      weeklyData[weekKey] = (weeklyData[weekKey] || 0) + cost;
+      
+      const day = date.getDay();
+      dayOfWeekCount[day].count += 1;
+      dayOfWeekCount[day].spent += cost;
+
+      // Add to item stats
+      if (r.milkQty > 0) {
+        const name = 'milk';
+        if (!itemStats[name]) itemStats[name] = { totalSpent: 0, totalWeight: 0, pricesPerKg: [], dates: [], count: 0 };
+        itemStats[name].totalSpent += r.milkQty * r.milkPrice;
+        itemStats[name].totalWeight += r.milkQty;
+        itemStats[name].pricesPerKg.push(r.milkPrice);
+        itemStats[name].dates.push(new Date(r.date).getTime());
+        itemStats[name].count += 1;
+      }
+      if (r.waterQty > 0) {
+        const name = 'water';
+        if (!itemStats[name]) itemStats[name] = { totalSpent: 0, totalWeight: 0, pricesPerKg: [], dates: [], count: 0 };
+        itemStats[name].totalSpent += r.waterQty * r.waterPrice;
+        itemStats[name].totalWeight += r.waterQty;
+        itemStats[name].pricesPerKg.push(r.waterPrice);
+        itemStats[name].dates.push(new Date(r.date).getTime());
+        itemStats[name].count += 1;
+      }
+    });
 
     history.forEach(order => {
       totalSpent += order.totalPrice;
