@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 
+// Performance and debug logging for Netlify compatibility
 console.log('WeightPrice Pro: Initializing ESM Engine...');
 
 const rootElement = document.getElementById('root');
