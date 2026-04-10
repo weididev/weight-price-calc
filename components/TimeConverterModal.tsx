@@ -1,204 +1,79 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Theme } from '../types.ts';
-import { X, ArrowRightLeft, Clock } from 'lucide-react';
-
-interface TimeConverterModalProps {
-  theme: Theme;
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const TimeConverterModal: React.FC<TimeConverterModalProps> = ({ theme, isOpen, onClose }) => {
-  const [mode, setMode] = useState<'Z2I' | 'I2Z'>('Z2I');
-  const [hh, setHh] = useState('');
-  const [mm, setMm] = useState('');
-  const [result, setResult] = useState<string | null>(null);
-
-  const hhRef = useRef<HTMLInputElement>(null);
-  const mmRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setHh('');
-      setMm('');
-      setResult(null);
-      setTimeout(() => hhRef.current?.focus(), 100);
-    }
-  }, [isOpen, mode]);
-
-  useEffect(() => {
-    if (hh.length === 2 && mm.length === 2) {
-      calculateResult(hh, mm, mode);
-    } else {
-      setResult(null);
-    }
-  }, [hh, mm, mode]);
-
-  const calculateResult = (h: string, m: string, currentMode: 'Z2I' | 'I2Z') => {
-    let hours = parseInt(h, 10);
-    let minutes = parseInt(m, 10);
-
-    if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-      setResult('Invalid Time');
-      return;
-    }
-
-    let totalMinutes = hours * 60 + minutes;
-
-    if (currentMode === 'Z2I') {
-      totalMinutes += 5 * 60 + 30; // Add 5:30
-    } else {
-      totalMinutes -= 5 * 60 + 30; // Subtract 5:30
-    }
-
-    // Handle day wrap around
-    let dayOffset = '';
-    if (totalMinutes < 0) {
-      totalMinutes += 24 * 60;
-      dayOffset = ' (Prev Day)';
-    } else if (totalMinutes >= 24 * 60) {
-      totalMinutes -= 24 * 60;
-      dayOffset = ' (Next Day)';
-    }
-
-    const resH = Math.floor(totalMinutes / 60);
-    const resM = totalMinutes % 60;
-
-    setResult(`${resH.toString().padStart(2, '0')}:${resM.toString().padStart(2, '0')}${dayOffset}`);
-  };
-
-  const handleHhChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, '');
-    setHh(val);
-    if (val.length === 2) {
-      mmRef.current?.focus();
-    }
-  };
-
-  const handleMmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, '');
-    setMm(val);
-    if (val.length === 0 && e.nativeEvent && (e.nativeEvent as InputEvent).inputType === 'deleteContentBackward') {
-        // If user presses backspace on empty MM, go back to HH
-        hhRef.current?.focus();
-    }
-  };
-
-  const handleMmKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && mm === '') {
-      hhRef.current?.focus();
-    }
-  };
-
-  if (!isOpen) return null;
-
-  const isDark = theme === 'dark';
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className={`w-full max-w-sm p-6 rounded-3xl shadow-2xl relative animate-in zoom-in-95 duration-200 ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-white border border-slate-100'}`}>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Weight Price Smart Calc</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            padding: 40px 20px; 
+            line-height: 1.6; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            color: #334155; 
+            background-color: #f8fafc;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        h1 { color: #0f172a; margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
+        h2 { margin-top: 30px; color: #0ea5e9; font-size: 1.25rem; }
+        p, li { color: #475569; margin-bottom: 12px; font-size: 0.95rem; }
+        ul { padding-left: 20px; }
+        .highlight { font-weight: 600; color: #0f172a; }
+        a { color: #0ea5e9; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .footer { margin-top: 40px; font-size: 0.8rem; color: #94a3b8; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Privacy Policy</h1>
+        <p><strong>Last Updated:</strong> January 2025</p>
         
-        <button 
-          onClick={onClose}
-          className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${isDark ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-500 hover:text-slate-900'}`}
-        >
-          <X size={16} />
-        </button>
+        <p>Thank you for using <strong>Weight Price Smart Calc</strong> ("we", "our", or "the App"). We are committed to protecting your privacy and ensuring you have a safe experience.</p>
 
-        <div className="flex items-center gap-3 mb-6">
-          <div className={`p-2.5 rounded-xl ${isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
-            <Clock size={20} />
-          </div>
-          <h2 className={`text-lg font-outfit font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Time Converter</h2>
-        </div>
+        <h2>1. Data We Do Not Collect</h2>
+        <p>We believe in privacy by design. <span class="highlight">We do not collect, store, or transmit any of your personal identification information</span> (such as your name, address, email, or phone number) to our own servers.</p>
 
-        {/* Mode Switcher */}
-        <div className={`flex p-1 mb-8 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-          <button
-            onClick={() => setMode('Z2I')}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
-              mode === 'Z2I' 
-                ? (isDark ? 'bg-slate-700 text-white shadow-sm' : 'bg-white text-slate-900 shadow-sm')
-                : (isDark ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700')
-            }`}
-          >
-            ZULU <ArrowRightLeft size={12} /> IST
-          </button>
-          <button
-            onClick={() => setMode('I2Z')}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
-              mode === 'I2Z' 
-                ? (isDark ? 'bg-slate-700 text-white shadow-sm' : 'bg-white text-slate-900 shadow-sm')
-                : (isDark ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700')
-            }`}
-          >
-            IST <ArrowRightLeft size={12} /> ZULU
-          </button>
-        </div>
+        <h2>2. Local Data Storage</h2>
+        <p>The App functions primarily as an offline utility. Data related to your usage, such as:</p>
+        <ul>
+            <li>Purchase History</li>
+            <li>Calculated Items</li>
+            <li>Theme Preferences</li>
+        </ul>
+        <p>is stored <strong>locally on your device</strong>. This data remains on your phone and is removed if you uninstall the App or clear your app data.</p>
 
-        {/* Input Area */}
-        <div className="flex flex-col items-center justify-center mb-8">
-          <p className={`text-[10px] font-black uppercase tracking-widest mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Enter {mode === 'Z2I' ? 'ZULU' : 'IST'} Time
-          </p>
-          
-          <div className="flex items-center justify-center gap-3 text-4xl font-outfit font-black">
-            <input 
-              ref={hhRef}
-              type="text" 
-              inputMode="numeric"
-              maxLength={2} 
-              value={hh} 
-              onChange={handleHhChange} 
-              className={`w-20 h-20 text-center rounded-2xl border-2 outline-none transition-all ${
-                isDark 
-                  ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500 focus:bg-indigo-500/5' 
-                  : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500 focus:bg-indigo-50'
-              }`}
-              placeholder="HH"
-            />
-            <span className={`pb-2 ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>:</span>
-            <input 
-              ref={mmRef}
-              type="text" 
-              inputMode="numeric"
-              maxLength={2} 
-              value={mm} 
-              onChange={handleMmChange} 
-              onKeyDown={handleMmKeyDown}
-              className={`w-20 h-20 text-center rounded-2xl border-2 outline-none transition-all ${
-                isDark 
-                  ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500 focus:bg-indigo-500/5' 
-                  : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500 focus:bg-indigo-50'
-              }`}
-              placeholder="MM"
-            />
-          </div>
-        </div>
+        <h2>3. Third-Party Services & Advertising</h2>
+        <p>To support the development of this free application, we use <strong>Google AdMob</strong> to display advertisements. AdMob is an advertising service provided by Google Inc.</p>
+        <p>Google AdMob may collect and use generic data to serve personalized ads, including:</p>
+        <ul>
+            <li>Device Identifiers (e.g., Android Advertising ID)</li>
+            <li>Approximate Location</li>
+            <li>Device Type and Operating System</li>
+            <li>App Usage Data</li>
+        </ul>
+        <p>This data collection is managed entirely by Google. For more information on how Google uses data, please visit: <a href="https://policies.google.com/technologies/partner-sites" target="_blank">Google Privacy & Terms</a>.</p>
 
-        {/* Result Area */}
-        <div className={`p-5 rounded-2xl text-center transition-all ${
-          result && result !== 'Invalid Time'
-            ? (isDark ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-100')
-            : (isDark ? 'bg-slate-800/50 border border-slate-800' : 'bg-slate-50 border border-slate-100')
-        }`}>
-          <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            {mode === 'Z2I' ? 'IST' : 'ZULU'} Result
-          </p>
-          <div className={`text-3xl font-outfit font-black ${
-            result === 'Invalid Time' 
-              ? 'text-rose-500 text-xl' 
-              : result 
-                ? (isDark ? 'text-emerald-400' : 'text-emerald-600')
-                : (isDark ? 'text-slate-600' : 'text-slate-300')
-          }`}>
-            {result || '--:--'}
-          </div>
-        </div>
+        <h2>4. Your Consent</h2>
+        <p>By using the App, you consent to this Privacy Policy. When you first open the App, you are asked to acknowledge and agree to these terms to proceed.</p>
 
-      </div>
+        <h2>5. Changes to This Policy</h2>
+        <p>We may update our Privacy Policy from time to time. You are advised to review this page periodically for any changes. Changes are effective immediately after they are posted on this page.</p>
+
+        <h2>6. Contact Us</h2>
+        <p>If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at:</p>
+        <p><strong>Email:</strong> support@weightpricesmartcalc.app</p>
     </div>
-  );
-};
 
-export default TimeConverterModal;
+    <div class="footer">
+        &copy; 2025 Weight Price Smart Calc. Made in India.
+    </div>
+</body>
+</html>
