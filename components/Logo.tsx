@@ -8,54 +8,76 @@ interface LogoProps {
 
 const Logo: React.FC<LogoProps> = ({ theme, className }) => {
   const isDark = theme === 'dark';
-  const primaryColor = isDark ? "#38bdf8" : "#0ea5e9";
-  const metalColor = isDark ? "#94a3b8" : "#64748b";
-  const skinColor = "#e2b08e"; // Skin tone for hand
-  const panFill = isDark ? "#1e293b" : "#f1f5f9";
+  
+  // Colors
+  const skinColor = "#e2b08e";
+  const skinShadow = "#cfa07e";
+  const goldLight = "#fcd34d";
+  const goldDark = "#b45309";
+  const goldMain = "#fbbf24";
   
   return (
     <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      
-      {/* --- HAND HOLDING THE SCALE --- */}
+      <defs>
+        <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fceabb" />
+          <stop offset="50%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#d97706" />
+        </linearGradient>
+      </defs>
+
+      {/* --- HAND (Holding the scale) --- */}
       {/* Wrist */}
-      <path d="M50 0 V 15" stroke={skinColor} strokeWidth="8" strokeLinecap="round" />
+      <path d="M50 100 V 75" stroke={skinColor} strokeWidth="14" strokeLinecap="round" />
       
-      {/* Hand Grip (Fingers wrapping around ring) */}
-      <rect x="42" y="12" width="16" height="8" rx="3" fill={skinColor} />
-      <path d="M42 16 H 58" stroke="#cfa07e" strokeWidth="1" /> 
+      {/* Hand Grip */}
+      <rect x="38" y="65" width="24" height="16" rx="6" fill={skinColor} />
+      <path d="M38 70 H 62" stroke={skinShadow} strokeWidth="1" opacity="0.3" />
+      <path d="M38 75 H 62" stroke={skinShadow} strokeWidth="1" opacity="0.3" />
+      
+      {/* Thumb (wrapping around) */}
+      <rect x="42" y="68" width="16" height="6" rx="3" fill={skinShadow} opacity="0.5" />
 
-      {/* Top Ring */}
-      <circle cx="50" cy="22" r="4" stroke={metalColor} strokeWidth="2" fill="none" />
-
-      {/* Main Vertical Rod */}
-      <path d="M50 26 L 50 45" stroke={metalColor} strokeWidth="2" />
+      {/* --- SCALE STRUCTURE (Golden Tarazu) --- */}
+      
+      {/* Center Rod */}
+      <rect x="48" y="20" width="4" height="50" fill="url(#goldGradient)" />
+      
+      {/* Top Pivot */}
+      <circle cx="50" cy="20" r="5" fill="url(#goldGradient)" stroke={goldDark} strokeWidth="0.5" />
+      <circle cx="50" cy="20" r="2" fill="#fff" opacity="0.5" />
 
       {/* Horizontal Beam */}
-      <path d="M15 45 H 85" stroke={isDark ? "#cbd5e1" : "#334155"} strokeWidth="3" strokeLinecap="round" />
+      <path d="M15 20 H 85" stroke="url(#goldGradient)" strokeWidth="4" strokeLinecap="round" />
       
-      {/* Center Pivot Point */}
-      <circle cx="50" cy="45" r="3" fill={primaryColor} />
-
-      {/* --- LEFT PAN (Items) --- */}
+      {/* --- LEFT PAN (Vegetables) --- */}
       {/* Strings */}
-      <path d="M15 45 L 10 75" stroke={metalColor} strokeWidth="1" />
-      <path d="M25 45 L 30 75" stroke={metalColor} strokeWidth="1" />
-      {/* Pan */}
-      <path d="M10 75 Q 20 90 30 75" fill={panFill} stroke={primaryColor} strokeWidth="2" />
+      <path d="M15 20 L 10 45" stroke={isDark ? "#94a3b8" : "#64748b"} strokeWidth="0.5" />
+      <path d="M15 20 L 20 45" stroke={isDark ? "#94a3b8" : "#64748b"} strokeWidth="0.5" />
+      <path d="M15 20 L 15 45" stroke={isDark ? "#94a3b8" : "#64748b"} strokeWidth="0.5" />
       
-      {/* Item on Left (Milk Bottle) */}
-       <rect x="18" y="65" width="4" height="8" fill="#e0f2fe" stroke={primaryColor} strokeWidth="0.5" />
-
-
-      {/* --- RIGHT PAN (Rupee) --- */}
-      {/* Strings */}
-      <path d="M75 45 L 70 75" stroke={metalColor} strokeWidth="1" />
-      <path d="M85 45 L 90 75" stroke={metalColor} strokeWidth="1" />
       {/* Pan */}
-      <path d="M70 75 Q 80 90 90 75" fill={panFill} stroke={primaryColor} strokeWidth="2" />
+      <path d="M10 45 Q 15 55 20 45" fill="url(#goldGradient)" stroke={goldDark} strokeWidth="0.5" />
+      
+      {/* Veggies */}
+      <circle cx="13" cy="42" r="3" fill="#ef4444" /> {/* Tomato */}
+      <circle cx="17" cy="43" r="3" fill="#22c55e" /> {/* Green Veg */}
+      <circle cx="15" cy="40" r="2.5" fill="#eab308" /> {/* Potato/Lemon */}
+
+      {/* --- RIGHT PAN (Money) --- */}
+      {/* Strings */}
+      <path d="M85 20 L 80 45" stroke={isDark ? "#94a3b8" : "#64748b"} strokeWidth="0.5" />
+      <path d="M85 20 L 90 45" stroke={isDark ? "#94a3b8" : "#64748b"} strokeWidth="0.5" />
+      <path d="M85 20 L 85 45" stroke={isDark ? "#94a3b8" : "#64748b"} strokeWidth="0.5" />
+      
+      {/* Pan */}
+      <path d="M80 45 Q 85 55 90 45" fill="url(#goldGradient)" stroke={goldDark} strokeWidth="0.5" />
       
       {/* Rupee Symbol */}
-      <text x="80" y="73" textAnchor="middle" fill={isDark ? "#4ade80" : "#16a34a"} fontSize="10" fontWeight="900" style={{ fontFamily: 'sans-serif' }}>₹</text>
+      <text x="85" y="44" textAnchor="middle" fill={isDark ? "#4ade80" : "#16a34a"} fontSize="10" fontWeight="900" style={{ fontFamily: 'sans-serif' }}>₹</text>
+
+      {/* Shine/Reflection on Beam */}
+      <path d="M20 19 H 80" stroke="white" strokeWidth="1" opacity="0.4" strokeLinecap="round" />
 
     </svg>
   );
