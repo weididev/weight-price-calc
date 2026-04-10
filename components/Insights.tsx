@@ -262,13 +262,15 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImp
       inflationRate,
       categories: { vegFruit, others }
     };
-  }, [history]);
+  }, [history, dairyRecords]);
 
   const exportToCSV = async () => {
     if (!data) return;
-    const headers = ['Order ID', 'Date', 'Item Name', 'Weight', 'Unit', 'Price (Rs)'];
-    const rows = history.flatMap(order => 
+    const headers = ['Type', 'Order/Record ID', 'Date', 'Item Name', 'Weight/Qty', 'Unit', 'Price (Rs)'];
+    
+    const purchaseRows = history.flatMap(order => 
       order.items.map(item => [
+        'Purchase',
         order.id,
         new Date(order.timestamp).toLocaleDateString('en-IN'),
         item.name,
@@ -277,13 +279,40 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImp
         item.price
       ])
     );
+
+    const dairyRows = dairyRecords.flatMap(record => {
+      const rows = [];
+      if (record.milkQty > 0) {
+        rows.push([
+          'Dairy',
+          record.id,
+          new Date(record.date).toLocaleDateString('en-IN'),
+          'Milk',
+          record.milkQty * 1000,
+          'ml',
+          record.milkQty * record.milkPrice
+        ]);
+      }
+      if (record.waterQty > 0) {
+        rows.push([
+          'Dairy',
+          record.id,
+          new Date(record.date).toLocaleDateString('en-IN'),
+          'Water',
+          record.waterQty,
+          'Unit',
+          record.waterQty * record.waterPrice
+        ]);
+      }
+      return rows;
+    });
     
     const csvContent = [
       headers.join(','),
-      ...rows.map(r => r.join(','))
+      ...[...purchaseRows, ...dairyRows].map(r => r.join(','))
     ].join('\n');
 
-    const fileName = `Shopping_History_${new Date().getTime()}.csv`;
+    const fileName = `Full_History_${new Date().getTime()}.csv`;
 
     if (Capacitor.isNativePlatform()) {
       try {
@@ -302,7 +331,6 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImp
         });
       } catch (e) {
         console.error('Export failed', e);
-        alert('Failed to export file. Please check permissions.');
       }
     } else {
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
