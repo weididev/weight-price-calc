@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sun, Moon, MoreVertical, Calculator as CalcIcon, History as HistIcon, Sparkles, Info, Share2, Clock } from 'lucide-react';
+import { Sun, Moon, MoreVertical, Calculator as CalcIcon, History as HistIcon, Sparkles, Info, Share2, Clock, Milk } from 'lucide-react';
 import { Theme } from '../types.ts';
 import Logo from './Logo.tsx';
 import { Share } from '@capacitor/share';
@@ -95,6 +95,9 @@ const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onNavigate, curre
               <button onClick={() => handleNav('calc')} className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold ${currentTab === 'calc' ? 'text-sky-500' : ''} hover:bg-sky-500/10`}>
                 <CalcIcon size={14} /> Calculator
               </button>
+              <button onClick={() => handleNav('dairy')} className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold ${currentTab === 'dairy' ? 'text-blue-500' : ''} hover:bg-blue-500/10`}>
+                <Milk size={14} /> Dairy Manager
+              </button>
               <button onClick={() => handleNav('history')} className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold ${currentTab === 'history' ? 'text-amber-500' : ''} hover:bg-amber-500/10`}>
                 <HistIcon size={14} /> History
               </button>
@@ -102,15 +105,12 @@ const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onNavigate, curre
                 <Sparkles size={14} /> Insights
               </button>
               <div className={`h-[1px] ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`} />
-              
-              {/* New Time Converter Button */}
               <button 
                 onClick={() => { setIsTimeConverterOpen(true); setIsMenuOpen(false); }} 
                 className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold hover:bg-indigo-500/10 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}
               >
                 <Clock size={14} /> Time Converter
               </button>
-              
               <div className={`h-[1px] ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`} />
               <button onClick={() => handleNav('about')} className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold ${currentTab === 'about' ? 'text-rose-500' : ''} hover:bg-rose-500/10`}>
                 <Info size={14} /> About & Version
