@@ -1,8 +1,8 @@
 // Central Configuration File
-// Update all settings here
+// Place this file in the SAME folder as App.tsx and types.ts
 
 export const APP_CONFIG = {
-  version: '1.4.0', // Bumped version for release
+  version: '1.5.0', // Release Ready
   ads: {
     // Set this to TRUE when you are ready to publish with real ads
     enableRealAds: true, 
