@@ -1,20 +1,26 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Theme, DairyRecord, DairySeller, getSafeId } from '../types.ts';
+import { Theme, DairyRecord, DairySeller, DairyPayment, getSafeId } from '../types.ts';
 import { 
   Milk, Droplets, Calendar, Plus, Trash2, ChevronLeft, ChevronRight, 
-  Download, TrendingUp, Save, Settings, Edit2, User, Check, X, Store
+  Download, TrendingUp, Save, Settings, Edit2, User, Check, X, Store,
+  CreditCard, History as HistIcon, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 
 interface DairyProps {
   theme: Theme;
   records: DairyRecord[];
   sellers: DairySeller[];
+  payments: DairyPayment[];
   onUpdate: (records: DairyRecord[]) => void;
   onUpdateSellers: (sellers: DairySeller[]) => void;
+  onUpdatePayments: (payments: DairyPayment[]) => void;
 }
 
-const Dairy: React.FC<DairyProps> = ({ theme, records, sellers, onUpdate, onUpdateSellers }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'records' | 'settings'>('records');
+const Dairy: React.FC<DairyProps> = ({ 
+  theme, records, sellers, payments = [], 
+  onUpdate, onUpdateSellers, onUpdatePayments 
+}) => {
+  const [activeSubTab, setActiveSubTab] = useState<'records' | 'billing' | 'settings'>('records');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAdding, setIsAdding] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
@@ -33,6 +39,13 @@ const Dairy: React.FC<DairyProps> = ({ theme, records, sellers, onUpdate, onUpda
   const [sellerName, setSellerName] = useState('');
   const [sellerMilkPrice, setSellerMilkPrice] = useState('60');
   const [sellerWaterPrice, setSellerWaterPrice] = useState('20');
+
+  // Billing State
+  const [isAddingPayment, setIsAddingPayment] = useState(false);
+  const [paymentSellerId, setPaymentSellerId] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentNotes, setPaymentNotes] = useState('');
 
   const isDark = theme === 'dark';
 
@@ -172,6 +185,47 @@ const Dairy: React.FC<DairyProps> = ({ theme, records, sellers, onUpdate, onUpda
     onUpdate(records.filter(r => r.id !== id));
   };
 
+  const handleAddPayment = () => {
+    if (!paymentSellerId || !paymentAmount) return;
+
+    const newPayment: DairyPayment = {
+      id: getSafeId(),
+      sellerId: paymentSellerId,
+      amount: parseFloat(paymentAmount) || 0,
+      date: paymentDate,
+      timestamp: new Date(paymentDate).getTime(),
+      notes: paymentNotes
+    };
+
+    onUpdatePayments([...payments, newPayment]);
+    setIsAddingPayment(false);
+    setPaymentAmount('');
+    setPaymentNotes('');
+  };
+
+  const deletePayment = (id: string) => {
+    onUpdatePayments(payments.filter(p => p.id !== id));
+  };
+
+  const sellerBillingData = useMemo(() => {
+    return sellers.map(seller => {
+      const sellerRecords = records.filter(r => r.sellerId === seller.id);
+      const sellerPayments = payments.filter(p => p.sellerId === seller.id);
+
+      const totalSpent = sellerRecords.reduce((sum, r) => sum + (r.milkQty * r.milkPrice + r.waterQty * r.waterPrice), 0);
+      const totalPaid = sellerPayments.reduce((sum, p) => sum + p.amount, 0);
+      const pending = totalSpent - totalPaid;
+
+      return {
+        ...seller,
+        totalSpent,
+        totalPaid,
+        pending,
+        lastPayment: sellerPayments.sort((a, b) => b.timestamp - a.timestamp)[0]
+      };
+    });
+  }, [sellers, records, payments]);
+
   const changeMonth = (offset: number) => {
     const next = new Date(currentMonth);
     next.setMonth(next.getMonth() + offset);
@@ -203,6 +257,12 @@ const Dairy: React.FC<DairyProps> = ({ theme, records, sellers, onUpdate, onUpda
             className={`p-2 rounded-lg transition-all ${activeSubTab === 'records' ? (isDark ? 'bg-slate-700 text-white' : 'bg-white text-slate-900 shadow-sm') : 'text-slate-500'}`}
           >
             <Calendar size={16} />
+          </button>
+          <button 
+            onClick={() => setActiveSubTab('billing')}
+            className={`p-2 rounded-lg transition-all ${activeSubTab === 'billing' ? (isDark ? 'bg-slate-700 text-white' : 'bg-white text-slate-900 shadow-sm') : 'text-slate-500'}`}
+          >
+            <CreditCard size={16} />
           </button>
           <button 
             onClick={() => setActiveSubTab('settings')}
@@ -401,6 +461,159 @@ const Dairy: React.FC<DairyProps> = ({ theme, records, sellers, onUpdate, onUpda
             )}
           </div>
         </>
+      ) : activeSubTab === 'billing' ? (
+        /* BILLING TAB */
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+          <div className="grid grid-cols-2 gap-3">
+            <div className={`p-4 rounded-3xl border ${isDark ? 'bg-slate-800/50 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+              <p className="text-[10px] font-black uppercase text-slate-500 mb-1">Total Dues</p>
+              <h4 className="text-xl font-outfit font-black text-rose-500">
+                ₹{sellerBillingData.reduce((sum, s) => sum + Math.max(0, s.pending), 0).toFixed(0)}
+              </h4>
+            </div>
+            <div className={`p-4 rounded-3xl border ${isDark ? 'bg-slate-800/50 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+              <p className="text-[10px] font-black uppercase text-slate-500 mb-1">Total Paid</p>
+              <h4 className="text-xl font-outfit font-black text-emerald-500">
+                ₹{sellerBillingData.reduce((sum, s) => sum + s.totalPaid, 0).toFixed(0)}
+              </h4>
+            </div>
+          </div>
+
+          {isAddingPayment && (
+            <div className={`p-5 rounded-3xl border animate-in zoom-in-95 duration-200 ${isDark ? 'bg-slate-900 border-emerald-500/30' : 'bg-emerald-50/50 border-emerald-200'}`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-sm text-emerald-600">Record Payment</h3>
+                <button onClick={() => setIsAddingPayment(false)} className="text-slate-400 hover:text-rose-500"><X size={18} /></button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Seller</label>
+                  <select 
+                    value={paymentSellerId}
+                    onChange={(e) => setPaymentSellerId(e.target.value)}
+                    className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
+                  >
+                    <option value="">Select Seller</option>
+                    {sellers.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Amount (₹)</label>
+                    <input 
+                      type="number" 
+                      value={paymentAmount} 
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Date</label>
+                    <input 
+                      type="date" 
+                      value={paymentDate} 
+                      onChange={(e) => setPaymentDate(e.target.value)}
+                      className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  onClick={handleAddPayment}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/20"
+                >
+                  <Check size={18} /> Confirm Payment
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Seller Balances</h3>
+            {sellerBillingData.map(seller => (
+              <div 
+                key={seller.id}
+                className={`p-5 rounded-3xl border transition-all ${isDark ? 'bg-slate-800/20 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm">{seller.name}</h4>
+                      <p className="text-[10px] text-slate-500">Total Spent: ₹{seller.totalSpent.toFixed(0)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black uppercase text-slate-500">Pending</p>
+                    <p className={`text-lg font-outfit font-black ${seller.pending > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                      ₹{seller.pending.toFixed(0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => {
+                      setPaymentSellerId(seller.id);
+                      setPaymentAmount(Math.max(0, seller.pending).toString());
+                      setIsAddingPayment(true);
+                    }}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all"
+                  >
+                    Pay Now
+                  </button>
+                  <button 
+                    className={`flex-1 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-wider border transition-all ${isDark ? 'border-slate-700 text-slate-400 hover:text-white' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                  >
+                    View History
+                  </button>
+                </div>
+
+                {seller.lastPayment && (
+                  <div className="mt-3 pt-3 border-t border-slate-800/50 flex items-center justify-between text-[10px]">
+                    <span className="text-slate-500">Last Payment:</span>
+                    <span className="font-bold text-emerald-500">₹{seller.lastPayment.amount} on {new Date(seller.lastPayment.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Recent Payments History */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Recent Payments</h3>
+            {payments.length === 0 ? (
+              <p className="text-center py-4 text-xs text-slate-500 italic">No payments recorded yet</p>
+            ) : (
+              payments.slice().sort((a, b) => b.timestamp - a.timestamp).slice(0, 5).map(payment => {
+                const seller = sellers.find(s => s.id === payment.sellerId);
+                return (
+                  <div key={payment.id} className={`p-3 rounded-xl border flex items-center justify-between ${isDark ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
+                        <Check size={12} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold">{seller?.name || 'Unknown'}</p>
+                        <p className="text-[10px] text-slate-500">{new Date(payment.date).toLocaleDateString('en-IN')}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-black text-emerald-500">₹{payment.amount}</p>
+                      <button onClick={() => deletePayment(payment.id)} className="text-[10px] text-rose-500 hover:underline">Delete</button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
       ) : (
         /* SETTINGS TAB */
         <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
