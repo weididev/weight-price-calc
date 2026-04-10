@@ -1,3 +1,4 @@
+
 export type Theme = 'dark' | 'light';
 export type UnitType = 'solid' | 'liquid';
 
@@ -15,6 +16,25 @@ export interface CartItem {
   type: UnitType;
 }
 
+export interface DairySeller {
+  id: string;
+  name: string;
+  milkPrice: number;
+  waterPrice: number;
+  isDefault: boolean;
+}
+
+export interface DairyRecord {
+  id: string;
+  date: string; // YYYY-MM-DD
+  milkQty: number; // in Liters
+  milkPrice: number;
+  waterQty: number; // in Liters/Bottles
+  waterPrice: number;
+  sellerId?: string;
+  notes?: string;
+}
+
 export interface PurchaseOrder {
   id: string;
   timestamp: number;
@@ -22,6 +42,7 @@ export interface PurchaseOrder {
   totalPrice: number;
 }
 
+// Utility function moved here to avoid circular dependencies between App and Calculator
 export const getSafeId = () => {
   return Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
 };
