@@ -22,6 +22,7 @@ export interface DairySeller {
   milkPrice: number;
   waterPrice: number;
   isDefault: boolean;
+  sellerType?: 'milk' | 'water' | 'both';
 }
 
 export interface DairyRecord {
@@ -29,9 +30,20 @@ export interface DairyRecord {
   date: string; // YYYY-MM-DD
   milkQty: number; // in Liters
   milkPrice: number;
-  waterQty: number; // in Liters/Bottles
+  waterQty: number; // in Jars
   waterPrice: number;
-  sellerId?: string;
+  sellerId?: string; // Legacy
+  milkSellerId?: string;
+  waterSellerId?: string;
+  notes?: string;
+}
+
+export interface DairyPayment {
+  id: string;
+  sellerId: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  timestamp: number;
   notes?: string;
 }
 
