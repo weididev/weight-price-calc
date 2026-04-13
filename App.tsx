@@ -176,7 +176,7 @@ const App: React.FC = () => {
             
             <div className="flex-grow overflow-y-auto no-scrollbar px-5">
               {activeTab === 'history' && <History theme={theme} history={history} dairyRecords={dairyRecords} />}
-              {activeTab === 'insights' && <Insights theme={theme} history={history} dairyRecords={dairyRecords} onImportHistory={setHistory} />}
+              {activeTab === 'insights' && <Insights theme={theme} history={history} dairyRecords={dairyRecords} onImportHistory={setHistory} onImportDairyRecords={setDairyRecords} />}
               {activeTab === 'dairy' && (
                 <Dairy 
                   theme={theme} 
