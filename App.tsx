@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Theme, CartItem, PurchaseOrder, getSafeId } from './types.ts';
+import { Theme, CartItem, PurchaseOrder, getSafeId, DairyRecord, DairySeller, DairyPayment } from './types.ts';
 import Header from './components/Header.tsx';
 import Calculator from './components/Calculator.tsx';
 import Cart from './components/Cart.tsx';
@@ -38,8 +38,21 @@ const App: React.FC = () => {
       return saved ? JSON.parse(saved) : [];
     } catch (e) { return []; }
   });
+
+  const [dairyPayments, setDairyPayments] = useState<DairyPayment[]>(() => {
+    try {
+      const saved = localStorage.getItem('dairy_payments');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
   
-  const [activeTab, setActiveTab] = useState<'calc' | 'history' | 'insights' | 'about' | 'dairy'>('calc');
+  const [defaultTab, setDefaultTab] = useState<'calc' | 'history' | 'insights' | 'about' | 'dairy'>(() => {
+    try {
+      return (localStorage.getItem('default_home_screen') as any) || 'calc';
+    } catch (e) { return 'calc'; }
+  });
+
+  const [activeTab, setActiveTab] = useState<'calc' | 'history' | 'insights' | 'about' | 'dairy'>(defaultTab);
 
   // Privacy Policy Acceptance State
   const [privacyAccepted, setPrivacyAccepted] = useState<boolean>(true);
@@ -90,6 +103,18 @@ const App: React.FC = () => {
       localStorage.setItem('dairy_sellers', JSON.stringify(dairySellers));
     } catch (e) {}
   }, [dairySellers]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dairy_payments', JSON.stringify(dairyPayments));
+    } catch (e) {}
+  }, [dairyPayments]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('default_home_screen', defaultTab);
+    } catch (e) {}
+  }, [defaultTab]);
 
   const toggleTheme = () => setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   
@@ -157,11 +182,13 @@ const App: React.FC = () => {
                   theme={theme} 
                   records={dairyRecords} 
                   sellers={dairySellers}
+                  payments={dairyPayments}
                   onUpdate={setDairyRecords} 
                   onUpdateSellers={setDairySellers}
+                  onUpdatePayments={setDairyPayments}
                 />
               )}
-              {activeTab === 'about' && <About theme={theme} />}
+              {activeTab === 'about' && <About theme={theme} defaultTab={defaultTab} onSetDefaultTab={setDefaultTab} />}
             </div>
           </main>
 
