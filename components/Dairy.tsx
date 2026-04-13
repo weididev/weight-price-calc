@@ -32,6 +32,7 @@ const Dairy: React.FC<DairyProps> = ({
   const [waterQty, setWaterQty] = useState('0');
   const [waterPrice, setWaterPrice] = useState('20');
   const [selectedSellerId, setSelectedSellerId] = useState('');
+  const [notes, setNotes] = useState('');
 
   // Form State for Seller
   const [isAddingSeller, setIsAddingSeller] = useState(false);
@@ -94,7 +95,8 @@ const Dairy: React.FC<DairyProps> = ({
       milkPrice: parseFloat(milkPrice) || 0,
       waterQty: parseFloat(waterQty) || 0,
       waterPrice: parseFloat(waterPrice) || 0,
-      sellerId: selectedSellerId
+      sellerId: selectedSellerId,
+      notes: notes.trim()
     };
 
     if (editingRecordId) {
@@ -120,6 +122,7 @@ const Dairy: React.FC<DairyProps> = ({
     setDate(new Date().toISOString().split('T')[0]);
     setMilkQty('250');
     setWaterQty('0');
+    setNotes('');
     const defaultSeller = sellers.find(s => s.isDefault) || sellers[0];
     if (defaultSeller) {
       setMilkPrice(defaultSeller.milkPrice.toString());
@@ -135,6 +138,7 @@ const Dairy: React.FC<DairyProps> = ({
     setWaterQty(record.waterQty.toString());
     setWaterPrice(record.waterPrice.toString());
     setSelectedSellerId(record.sellerId || '');
+    setNotes(record.notes || '');
     setIsAdding(true);
   };
 
@@ -386,6 +390,17 @@ const Dairy: React.FC<DairyProps> = ({
                   </div>
                 </div>
 
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Remarks / Notes (Optional)</label>
+                  <input 
+                    type="text" 
+                    value={notes} 
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="e.g. Extra milk for guests"
+                    className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  />
+                </div>
+
                 <button 
                   onClick={handleAddOrUpdateRecord}
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/20"
@@ -439,6 +454,9 @@ const Dairy: React.FC<DairyProps> = ({
                             </span>
                           )}
                         </div>
+                        {record.notes && (
+                          <p className="text-[10px] text-slate-400 mt-1 italic">"{record.notes}"</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
