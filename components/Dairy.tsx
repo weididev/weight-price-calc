@@ -31,13 +31,15 @@ const Dairy: React.FC<DairyProps> = ({
   const [milkPrice, setMilkPrice] = useState('60');
   const [waterQty, setWaterQty] = useState('0');
   const [waterPrice, setWaterPrice] = useState('20');
-  const [selectedSellerId, setSelectedSellerId] = useState('');
+  const [selectedMilkSellerId, setSelectedMilkSellerId] = useState('');
+  const [selectedWaterSellerId, setSelectedWaterSellerId] = useState('');
   const [notes, setNotes] = useState('');
 
   // Form State for Seller
   const [isAddingSeller, setIsAddingSeller] = useState(false);
   const [editingSellerId, setEditingSellerId] = useState<string | null>(null);
   const [sellerName, setSellerName] = useState('');
+  const [sellerType, setSellerType] = useState<'milk' | 'water' | 'both'>('both');
   const [sellerMilkPrice, setSellerMilkPrice] = useState('60');
   const [sellerWaterPrice, setSellerWaterPrice] = useState('20');
 
@@ -60,11 +62,16 @@ const Dairy: React.FC<DairyProps> = ({
   ];
 
   useEffect(() => {
-    const defaultSeller = sellers.find(s => s.isDefault) || sellers[0];
-    if (defaultSeller) {
-      setSelectedSellerId(defaultSeller.id);
-      setMilkPrice(defaultSeller.milkPrice.toString());
-      setWaterPrice(defaultSeller.waterPrice.toString());
+    if (!isAdding) return;
+    const defaultMilkSeller = sellers.find(s => s.isDefault && (!s.sellerType || s.sellerType === 'milk' || s.sellerType === 'both')) || sellers.find(s => !s.sellerType || s.sellerType === 'milk' || s.sellerType === 'both');
+    if (defaultMilkSeller) {
+      setSelectedMilkSellerId(defaultMilkSeller.id);
+      setMilkPrice(defaultMilkSeller.milkPrice.toString());
+    }
+    const defaultWaterSeller = sellers.find(s => s.isDefault && (!s.sellerType || s.sellerType === 'water' || s.sellerType === 'both')) || sellers.find(s => !s.sellerType || s.sellerType === 'water' || s.sellerType === 'both');
+    if (defaultWaterSeller) {
+      setSelectedWaterSellerId(defaultWaterSeller.id);
+      setWaterPrice(defaultWaterSeller.waterPrice.toString());
     }
   }, [sellers, isAdding]);
 
@@ -93,9 +100,11 @@ const Dairy: React.FC<DairyProps> = ({
       date,
       milkQty: (parseFloat(milkQty) || 0) / 1000,
       milkPrice: parseFloat(milkPrice) || 0,
-      waterQty: parseFloat(waterQty) || 0,
+      waterQty: parseInt(waterQty) || 0,
       waterPrice: parseFloat(waterPrice) || 0,
-      sellerId: selectedSellerId,
+      milkSellerId: selectedMilkSellerId,
+      waterSellerId: selectedWaterSellerId,
+      sellerId: selectedMilkSellerId || selectedWaterSellerId, // legacy fallback
       notes: notes.trim()
     };
 
@@ -123,10 +132,19 @@ const Dairy: React.FC<DairyProps> = ({
     setMilkQty('250');
     setWaterQty('0');
     setNotes('');
-    const defaultSeller = sellers.find(s => s.isDefault) || sellers[0];
-    if (defaultSeller) {
-      setMilkPrice(defaultSeller.milkPrice.toString());
-      setWaterPrice(defaultSeller.waterPrice.toString());
+    const defaultMilkSeller = sellers.find(s => s.isDefault && (!s.sellerType || s.sellerType === 'milk' || s.sellerType === 'both')) || sellers.find(s => !s.sellerType || s.sellerType === 'milk' || s.sellerType === 'both');
+    if (defaultMilkSeller) {
+      setSelectedMilkSellerId(defaultMilkSeller.id);
+      setMilkPrice(defaultMilkSeller.milkPrice.toString());
+    } else {
+      setSelectedMilkSellerId('');
+    }
+    const defaultWaterSeller = sellers.find(s => s.isDefault && (!s.sellerType || s.sellerType === 'water' || s.sellerType === 'both')) || sellers.find(s => !s.sellerType || s.sellerType === 'water' || s.sellerType === 'both');
+    if (defaultWaterSeller) {
+      setSelectedWaterSellerId(defaultWaterSeller.id);
+      setWaterPrice(defaultWaterSeller.waterPrice.toString());
+    } else {
+      setSelectedWaterSellerId('');
     }
   };
 
@@ -137,7 +155,8 @@ const Dairy: React.FC<DairyProps> = ({
     setMilkPrice(record.milkPrice.toString());
     setWaterQty(record.waterQty.toString());
     setWaterPrice(record.waterPrice.toString());
-    setSelectedSellerId(record.sellerId || '');
+    setSelectedMilkSellerId(record.milkSellerId || record.sellerId || '');
+    setSelectedWaterSellerId(record.waterSellerId || record.sellerId || '');
     setNotes(record.notes || '');
     setIsAdding(true);
   };
@@ -148,7 +167,8 @@ const Dairy: React.FC<DairyProps> = ({
       name: sellerName,
       milkPrice: parseFloat(sellerMilkPrice) || 0,
       waterPrice: parseFloat(sellerWaterPrice) || 0,
-      isDefault: sellers.length === 0 || (editingSellerId ? sellers.find(s => s.id === editingSellerId)?.isDefault : false) || false
+      isDefault: sellers.length === 0 || (editingSellerId ? sellers.find(s => s.id === editingSellerId)?.isDefault : false) || false,
+      sellerType
     };
 
     if (editingSellerId) {
@@ -163,6 +183,7 @@ const Dairy: React.FC<DairyProps> = ({
     setIsAddingSeller(false);
     setEditingSellerId(null);
     setSellerName('');
+    setSellerType('both');
     setSellerMilkPrice('60');
     setSellerWaterPrice('20');
   };
@@ -170,6 +191,7 @@ const Dairy: React.FC<DairyProps> = ({
   const startEditSeller = (seller: DairySeller) => {
     setEditingSellerId(seller.id);
     setSellerName(seller.name);
+    setSellerType(seller.sellerType || 'both');
     setSellerMilkPrice(seller.milkPrice.toString());
     setSellerWaterPrice(seller.waterPrice.toString());
     setIsAddingSeller(true);
@@ -213,10 +235,24 @@ const Dairy: React.FC<DairyProps> = ({
 
   const sellerBillingData = useMemo(() => {
     return sellers.map(seller => {
-      const sellerRecords = records.filter(r => r.sellerId === seller.id);
+      const sellerRecords = records.filter(r => 
+        r.milkSellerId === seller.id || 
+        r.waterSellerId === seller.id || 
+        (!r.milkSellerId && !r.waterSellerId && r.sellerId === seller.id)
+      );
       const sellerPayments = payments.filter(p => p.sellerId === seller.id);
 
-      const totalSpent = sellerRecords.reduce((sum, r) => sum + (r.milkQty * r.milkPrice + r.waterQty * r.waterPrice), 0);
+      const totalSpent = sellerRecords.reduce((sum, r) => {
+        let cost = 0;
+        if (r.milkSellerId === seller.id || (!r.milkSellerId && r.sellerId === seller.id)) {
+          cost += (r.milkQty * r.milkPrice);
+        }
+        if (r.waterSellerId === seller.id || (!r.waterSellerId && r.sellerId === seller.id)) {
+          cost += (r.waterQty * r.waterPrice);
+        }
+        return sum + cost;
+      }, 0);
+
       const totalPaid = sellerPayments.reduce((sum, p) => sum + p.amount, 0);
       const pending = totalSpent - totalPaid;
 
@@ -236,13 +272,16 @@ const Dairy: React.FC<DairyProps> = ({
     setCurrentMonth(next);
   };
 
-  const handleSellerSelect = (id: string) => {
-    setSelectedSellerId(id);
+  const handleMilkSellerSelect = (id: string) => {
+    setSelectedMilkSellerId(id);
     const seller = sellers.find(s => s.id === id);
-    if (seller) {
-      setMilkPrice(seller.milkPrice.toString());
-      setWaterPrice(seller.waterPrice.toString());
-    }
+    if (seller) setMilkPrice(seller.milkPrice.toString());
+  };
+
+  const handleWaterSellerSelect = (id: string) => {
+    setSelectedWaterSellerId(id);
+    const seller = sellers.find(s => s.id === id);
+    if (seller) setWaterPrice(seller.waterPrice.toString());
   };
 
   return (
@@ -315,21 +354,6 @@ const Dairy: React.FC<DairyProps> = ({
               </div>
               
               <div className="space-y-4">
-                {/* Seller Selection */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Select Seller</label>
-                  <select 
-                    value={selectedSellerId}
-                    onChange={(e) => handleSellerSelect(e.target.value)}
-                    className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                  >
-                    <option value="">Manual Entry</option>
-                    {sellers.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Date</label>
@@ -340,53 +364,108 @@ const Dairy: React.FC<DairyProps> = ({
                       className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Milk Qty (ml)</label>
-                    <input 
-                      type="number" 
-                      step="1"
-                      value={milkQty} 
-                      onChange={(e) => setMilkQty(e.target.value)}
-                      className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
-                    />
+                </div>
+
+                {/* Milk Section */}
+                <div className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  <h4 className="text-xs font-bold mb-3 flex items-center gap-1.5 text-blue-500"><Milk size={14} /> Milk Details</h4>
+                  
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Milk Seller</label>
+                      <select 
+                        value={selectedMilkSellerId}
+                        onChange={(e) => handleMilkSellerSelect(e.target.value)}
+                        className={`w-full p-2.5 rounded-lg text-xs font-bold outline-none border ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                      >
+                        <option value="">Manual Entry</option>
+                        {sellers.filter(s => !s.sellerType || s.sellerType === 'milk' || s.sellerType === 'both').map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Qty (ml)</label>
+                        <input 
+                          type="number" 
+                          step="1"
+                          value={milkQty} 
+                          onChange={(e) => setMilkQty(e.target.value)}
+                          className={`w-full p-2.5 rounded-lg text-xs font-bold outline-none border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Price/L</label>
+                        <input 
+                          type="number" 
+                          value={milkPrice} 
+                          onChange={(e) => setMilkPrice(e.target.value)}
+                          className={`w-full p-2.5 rounded-lg text-xs font-bold outline-none border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Quantity Presets */}
+                    <div className="flex flex-wrap gap-2">
+                      {qtyPresets.map(preset => (
+                        <button
+                          key={preset.label}
+                          onClick={() => setMilkQty(preset.value.toString())}
+                          className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase transition-all ${
+                            milkQty === preset.value.toString()
+                              ? 'bg-blue-600 text-white'
+                              : (isDark ? 'bg-slate-700 text-slate-400 hover:text-white' : 'bg-white text-slate-500 border border-slate-200')
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                {/* Quantity Presets */}
-                <div className="flex flex-wrap gap-2">
-                  {qtyPresets.map(preset => (
-                    <button
-                      key={preset.label}
-                      onClick={() => setMilkQty(preset.value.toString())}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${
-                        milkQty === preset.value.toString()
-                          ? 'bg-blue-600 text-white'
-                          : (isDark ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-white text-slate-500 border border-slate-200')
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
+                {/* Water Section */}
+                <div className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  <h4 className="text-xs font-bold mb-3 flex items-center gap-1.5 text-sky-500"><Droplets size={14} /> Water Details</h4>
+                  
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Water Seller</label>
+                      <select 
+                        value={selectedWaterSellerId}
+                        onChange={(e) => handleWaterSellerSelect(e.target.value)}
+                        className={`w-full p-2.5 rounded-lg text-xs font-bold outline-none border ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                      >
+                        <option value="">Manual Entry</option>
+                        {sellers.filter(s => !s.sellerType || s.sellerType === 'water' || s.sellerType === 'both').map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Milk Price/L</label>
-                    <input 
-                      type="number" 
-                      value={milkPrice} 
-                      onChange={(e) => setMilkPrice(e.target.value)}
-                      className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Water Qty</label>
-                    <input 
-                      type="number" 
-                      value={waterQty} 
-                      onChange={(e) => setWaterQty(e.target.value)}
-                      className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Jars</label>
+                        <input 
+                          type="number" 
+                          step="1"
+                          value={waterQty} 
+                          onChange={(e) => setWaterQty(e.target.value)}
+                          className={`w-full p-2.5 rounded-lg text-xs font-bold outline-none border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Price/Jar</label>
+                        <input 
+                          type="number" 
+                          value={waterPrice} 
+                          onChange={(e) => setWaterPrice(e.target.value)}
+                          className={`w-full p-2.5 rounded-lg text-xs font-bold outline-none border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -421,7 +500,8 @@ const Dairy: React.FC<DairyProps> = ({
               </div>
             ) : (
               filteredRecords.map(record => {
-                const seller = sellers.find(s => s.id === record.sellerId);
+                const milkSeller = sellers.find(s => s.id === (record.milkSellerId || record.sellerId));
+                const waterSeller = sellers.find(s => s.id === (record.waterSellerId || record.sellerId));
                 return (
                   <div 
                     key={record.id}
@@ -432,27 +512,28 @@ const Dairy: React.FC<DairyProps> = ({
                         {new Date(record.date).getDate()}
                       </div>
                       <div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-1">
                           {record.milkQty > 0 && (
-                            <div className="flex items-center gap-1 text-xs font-bold text-blue-500">
-                              <Milk size={12} /> {record.milkQty}L
+                            <div className="flex items-center gap-2">
+                              <span className="flex items-center gap-1 text-xs font-bold text-blue-500">
+                                <Milk size={12} /> {record.milkQty}L
+                              </span>
+                              {milkSeller && <span className="text-[8px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 font-black uppercase">{milkSeller.name}</span>}
                             </div>
                           )}
                           {record.waterQty > 0 && (
-                            <div className="flex items-center gap-1 text-xs font-bold text-sky-500">
-                              <Droplets size={12} /> {record.waterQty}
+                            <div className="flex items-center gap-2">
+                              <span className="flex items-center gap-1 text-xs font-bold text-sky-500">
+                                <Droplets size={12} /> {record.waterQty} Jars
+                              </span>
+                              {waterSeller && <span className="text-[8px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-500 font-black uppercase">{waterSeller.name}</span>}
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-2 mt-1">
                           <p className="text-[10px] font-bold text-slate-500">
                             Total: ₹{(record.milkQty * record.milkPrice + record.waterQty * record.waterPrice).toFixed(0)}
                           </p>
-                          {seller && (
-                            <span className={`text-[8px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 font-black uppercase`}>
-                              {seller.name}
-                            </span>
-                          )}
                         </div>
                         {record.notes && (
                           <p className="text-[10px] text-slate-400 mt-1 italic">"{record.notes}"</p>
@@ -664,25 +745,42 @@ const Dairy: React.FC<DairyProps> = ({
                   />
                 </div>
 
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Seller Type</label>
+                  <select 
+                    value={sellerType}
+                    onChange={(e) => setSellerType(e.target.value as any)}
+                    className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  >
+                    <option value="both">Sells Both (Milk & Water)</option>
+                    <option value="milk">Milk Seller Only</option>
+                    <option value="water">Water Seller Only</option>
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Default Milk Price</label>
-                    <input 
-                      type="number" 
-                      value={sellerMilkPrice} 
-                      onChange={(e) => setSellerMilkPrice(e.target.value)}
-                      className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Default Water Price</label>
-                    <input 
-                      type="number" 
-                      value={sellerWaterPrice} 
-                      onChange={(e) => setSellerWaterPrice(e.target.value)}
-                      className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
-                    />
-                  </div>
+                  {(sellerType === 'milk' || sellerType === 'both') && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Default Milk Price</label>
+                      <input 
+                        type="number" 
+                        value={sellerMilkPrice} 
+                        onChange={(e) => setSellerMilkPrice(e.target.value)}
+                        className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
+                      />
+                    </div>
+                  )}
+                  {(sellerType === 'water' || sellerType === 'both') && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Default Water Price (Per Jar)</label>
+                      <input 
+                        type="number" 
+                        value={sellerWaterPrice} 
+                        onChange={(e) => setSellerWaterPrice(e.target.value)}
+                        className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <button 
@@ -714,11 +812,20 @@ const Dairy: React.FC<DairyProps> = ({
                       </div>
                       <div>
                         <h4 className="font-bold text-sm">{seller.name}</h4>
-                        {seller.isDefault && (
-                          <span className="text-[8px] font-black uppercase text-emerald-500 flex items-center gap-1">
-                            <Check size={8} /> Default Seller
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {seller.isDefault && (
+                            <span className="text-[8px] font-black uppercase text-emerald-500 flex items-center gap-0.5">
+                              <Check size={8} /> Default
+                            </span>
+                          )}
+                          <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${
+                            seller.sellerType === 'milk' ? 'bg-blue-500/10 text-blue-500' :
+                            seller.sellerType === 'water' ? 'bg-sky-500/10 text-sky-500' :
+                            'bg-indigo-500/10 text-indigo-500'
+                          }`}>
+                            {seller.sellerType === 'milk' ? 'Milk Only' : seller.sellerType === 'water' ? 'Water Only' : 'Milk & Water'}
                           </span>
-                        )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -746,14 +853,18 @@ const Dairy: React.FC<DairyProps> = ({
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800/50">
-                    <div>
-                      <p className="text-[10px] font-black uppercase text-slate-500">Milk Price</p>
-                      <p className="text-sm font-black">₹{seller.milkPrice}/L</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase text-slate-500">Water Price</p>
-                      <p className="text-sm font-black">₹{seller.waterPrice}/Unit</p>
-                    </div>
+                    {(seller.sellerType === 'milk' || seller.sellerType === 'both' || !seller.sellerType) && (
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-500">Milk Price</p>
+                        <p className="text-sm font-black">₹{seller.milkPrice}/L</p>
+                      </div>
+                    )}
+                    {(seller.sellerType === 'water' || seller.sellerType === 'both' || !seller.sellerType) && (
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-500">Water Price</p>
+                        <p className="text-sm font-black">₹{seller.waterPrice}/Jar</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
