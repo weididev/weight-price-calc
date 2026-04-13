@@ -18,6 +18,7 @@ interface InsightsProps {
   history: PurchaseOrder[];
   dairyRecords: DairyRecord[];
   onImportHistory?: (history: PurchaseOrder[]) => void;
+  onImportDairyRecords?: (records: DairyRecord[]) => void;
 }
 
 // Helper to normalize weight to KG/L
@@ -27,7 +28,7 @@ const getNormalizedWeight = (weightStr: string, unit: string) => {
   return val;
 };
 
-const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImportHistory }) => {
+const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImportHistory, onImportDairyRecords }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'alerts'>('overview');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -352,68 +353,124 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImp
 
       try {
         const lines = text.split('\n').filter(line => line.trim() !== '');
+        if (lines.length < 2) return;
+
         const headers = lines[0].split(',').map(h => h.trim());
         
-        // Basic validation
-        if (!headers.includes('Order ID') || !headers.includes('Item Name')) {
-          alert('Invalid CSV format. Please use a valid export file.');
+        const isNewFormat = headers.includes('Type');
+        const isOldFormat = headers.includes('Order ID') && headers.includes('Item Name');
+
+        if (!isNewFormat && !isOldFormat) {
+          console.error('Invalid CSV format.');
           return;
         }
 
         const ordersMap = new Map<string, PurchaseOrder>();
+        const newDairyRecords: DairyRecord[] = [];
 
         // Skip header
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(',').map(c => c.trim());
-          if (cols.length < 6) continue;
-
-          const [orderId, dateStr, name, weight, unit, priceStr] = cols;
-          const price = parseFloat(priceStr);
           
-          // Parse date (DD/MM/YYYY or similar)
-          // Fallback to current time if parsing fails, but try to keep order consistency
-          let timestamp = Date.now();
-          if (dateStr.includes('/')) {
-            const [d, m, y] = dateStr.split('/');
-            const parsedDate = new Date(`${y}-${m}-${d}`);
-            if (!isNaN(parsedDate.getTime())) timestamp = parsedDate.getTime();
-          }
+          if (isNewFormat) {
+            if (cols.length < 7) continue;
+            const [type, id, dateStr, name, weightStr, unit, priceStr] = cols;
+            
+            if (type === 'Purchase') {
+              const price = parseFloat(priceStr) || 0;
+              let timestamp = Date.now();
+              if (dateStr.includes('/')) {
+                const [d, m, y] = dateStr.split('/');
+                const parsedDate = new Date(`${y}-${m}-${d}`);
+                if (!isNaN(parsedDate.getTime())) timestamp = parsedDate.getTime();
+              }
 
-          if (!ordersMap.has(orderId)) {
-            ordersMap.set(orderId, {
-              id: orderId,
-              timestamp,
-              items: [],
-              totalPrice: 0
+              if (!ordersMap.has(id)) {
+                ordersMap.set(id, { id, timestamp, items: [], totalPrice: 0 });
+              }
+              const order = ordersMap.get(id)!;
+              order.items.push({
+                id: getSafeId() + i,
+                name,
+                weight: weightStr,
+                unit,
+                price,
+                type: 'solid'
+              });
+              order.totalPrice += price;
+            } else if (type === 'Dairy') {
+              const isMilk = name.toLowerCase() === 'milk';
+              const qty = parseFloat(weightStr) || 0;
+              const totalPrice = parseFloat(priceStr) || 0;
+              
+              let date = new Date().toISOString().split('T')[0];
+              if (dateStr.includes('/')) {
+                const [d, m, y] = dateStr.split('/');
+                date = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+              }
+
+              let existingRecord = newDairyRecords.find(r => r.id === id);
+              if (!existingRecord) {
+                existingRecord = {
+                  id,
+                  date,
+                  milkQty: 0,
+                  milkPrice: 0,
+                  waterQty: 0,
+                  waterPrice: 0,
+                  sellerId: ''
+                };
+                newDairyRecords.push(existingRecord);
+              }
+
+              if (isMilk) {
+                existingRecord.milkQty = unit === 'ml' ? qty / 1000 : qty;
+                existingRecord.milkPrice = existingRecord.milkQty > 0 ? totalPrice / existingRecord.milkQty : 0;
+              } else {
+                existingRecord.waterQty = qty;
+                existingRecord.waterPrice = qty > 0 ? totalPrice / qty : 0;
+              }
+            }
+          } else {
+            // Old format
+            if (cols.length < 6) continue;
+            const [orderId, dateStr, name, weight, unit, priceStr] = cols;
+            const price = parseFloat(priceStr) || 0;
+            
+            let timestamp = Date.now();
+            if (dateStr.includes('/')) {
+              const [d, m, y] = dateStr.split('/');
+              const parsedDate = new Date(`${y}-${m}-${d}`);
+              if (!isNaN(parsedDate.getTime())) timestamp = parsedDate.getTime();
+            }
+
+            if (!ordersMap.has(orderId)) {
+              ordersMap.set(orderId, { id: orderId, timestamp, items: [], totalPrice: 0 });
+            }
+            const order = ordersMap.get(orderId)!;
+            order.items.push({
+              id: getSafeId() + i,
+              name,
+              weight,
+              unit,
+              price,
+              type: 'solid'
             });
+            order.totalPrice += price;
           }
-
-          const order = ordersMap.get(orderId)!;
-          order.items.push({
-            id: getSafeId() + i, // Generate new ID for item to avoid collisions
-            name,
-            weight,
-            unit,
-            price,
-            type: 'solid' // Default
-          });
-          order.totalPrice += price;
         }
 
         const newHistory = Array.from(ordersMap.values()).sort((a, b) => b.timestamp - a.timestamp);
         
         if (newHistory.length > 0) {
-          if (confirm(`Found ${newHistory.length} orders. This will REPLACE your current history. Continue?`)) {
-            onImportHistory(newHistory);
-            alert('History imported successfully!');
-          }
-        } else {
-          alert('No valid orders found in CSV.');
+          onImportHistory(newHistory);
+        }
+        if (newDairyRecords.length > 0 && onImportDairyRecords) {
+          onImportDairyRecords(newDairyRecords);
         }
 
       } catch (err) {
-        console.error(err);
-        alert('Failed to parse CSV file.');
+        console.error('Failed to parse CSV file', err);
       }
       
       // Reset input
