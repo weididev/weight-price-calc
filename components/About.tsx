@@ -1,13 +1,17 @@
 import React from 'react';
 import { Theme } from '../types.ts';
-import { Heart, ShieldCheck, Zap, Beaker, Share2 } from 'lucide-react';
+import { Heart, ShieldCheck, Zap, Beaker, Share2, Settings } from 'lucide-react';
 import Logo from './Logo.tsx';
 import { APP_CONFIG } from '../config.ts';
 import { Share } from '@capacitor/share';
 
-interface AboutProps { theme: Theme; }
+interface AboutProps { 
+  theme: Theme; 
+  defaultTab: string;
+  onSetDefaultTab: (tab: 'calc' | 'history' | 'insights' | 'about' | 'dairy') => void;
+}
 
-const About: React.FC<AboutProps> = ({ theme }) => {
+const About: React.FC<AboutProps> = ({ theme, defaultTab, onSetDefaultTab }) => {
   const isDark = theme === 'dark';
   
   const { enableRealAds, realBannerId } = APP_CONFIG.ads;
@@ -72,6 +76,28 @@ const About: React.FC<AboutProps> = ({ theme }) => {
         <Share2 size={18} /> Share App with Friends
       </button>
 
+      {/* App Preferences */}
+      <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-[#0f172a] border-slate-800' : 'bg-white border-slate-100 shadow-xl'}`}>
+        <div className="flex items-center gap-2 mb-4">
+          <Settings size={18} className="text-indigo-500" />
+          <h3 className="font-bold text-sm">App Preferences</h3>
+        </div>
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Default Home Screen</label>
+          <select 
+            value={defaultTab}
+            onChange={(e) => onSetDefaultTab(e.target.value as any)}
+            className={`w-full p-3 rounded-xl text-xs font-bold outline-none border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+          >
+            <option value="calc">Calculator</option>
+            <option value="dairy">Dairy Manager</option>
+            <option value="history">History</option>
+            <option value="insights">Insights</option>
+          </select>
+          <p className="text-[10px] text-slate-500 ml-1 mt-1">This screen will open automatically when you start the app.</p>
+        </div>
+      </div>
+
       {/* Card 2: National Pride */}
       <div className={`p-8 rounded-[2.5rem] border overflow-hidden relative flex flex-col items-center text-center ${
         isDark 
@@ -132,7 +158,8 @@ const About: React.FC<AboutProps> = ({ theme }) => {
           </h4>
           <div className="h-[1px] w-6 bg-slate-700"></div>
         </div>
-        <p className="text-[9px] font-black uppercase tracking-[0.6em] text-slate-600">V A N D E &nbsp; M A T A R A M</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.6em] text-slate-600 mb-2">V A N D E &nbsp; M A T A R A M</p>
+        <p className="text-[10px] font-bold text-indigo-500">Developer weididev</p>
       </div>
 
     </div>
