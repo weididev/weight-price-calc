@@ -6,7 +6,7 @@ import Cart from './components/Cart.tsx';
 import History from './components/History.tsx';
 import Insights from './components/Insights.tsx';
 import About from './components/About.tsx';
-import Dairy from './components/Dairy.tsx';
+import Dairy from './components/Dairy';
 import AdMobBanner from './components/AdMobBanner.tsx';
 import PrivacyConsent from './components/PrivacyConsent.tsx';
 
