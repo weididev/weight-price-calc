@@ -1,30 +1,58 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="description" content="Weight Price Smart Calc Pro" />
+  <title>Weight Price Smart Calc</title>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-// Performance and debug logging for Netlify compatibility
-console.log('WeightPrice Pro: Initializing ESM Engine...');
-
-const rootElement = document.getElementById('root');
-
-if (rootElement) {
-  try {
-    const root = createRoot(rootElement);
-    root.render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
-    );
-    console.log('WeightPrice Pro: App Mounted Successfully');
-  } catch (error) {
-    console.error('WeightPrice Pro: Mounting Error:', error);
-    rootElement.innerHTML = `
-      <div style="padding: 20px; text-align: center; font-family: sans-serif; color: #ef4444;">
-        <h2 style="font-weight: 900;">Mounting Failed</h2>
-        <p style="font-size: 14px; opacity: 0.8;">Please refresh the page or check your connection.</p>
-      </div>
-    `;
+  <style>
+    body { 
+      font-family: 'Inter', sans-serif; 
+      margin: 0; 
+      padding: 0; 
+      background-color: #ffffff;
+      color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+    .font-outfit { font-family: 'Outfit', sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    input:focus { outline: none; }
+    * { box-sizing: border-box; }
+    
+    /* Animations */
+    @keyframes slideIn {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-in { animation: slideIn 0.3s ease-out forwards; }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@capacitor/core": "https://esm.sh/@capacitor/core@^8.0.1",
+    "@capacitor-community/admob": "https://esm.sh/@capacitor-community/admob@^8.0.0",
+    "@capacitor/share": "https://esm.sh/@capacitor/share@^8.0.0"
   }
-} else {
-  console.error('WeightPrice Pro: Root element not found');
 }
+</script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
