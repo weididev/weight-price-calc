@@ -352,16 +352,22 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImp
       if (!text) return;
 
       try {
-        const lines = text.split('\n').filter(line => line.trim() !== '');
+        const delimiter = text.includes('\t') ? '\t' : ',';
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
         if (lines.length < 2) return;
 
-        const headers = lines[0].split(',').map(h => h.trim());
+        const headers = lines[0].split(delimiter).map(h => h.trim());
         
-        const isNewFormat = headers.includes('Type');
-        const isOldFormat = headers.includes('Order ID') && headers.includes('Item Name');
+        const typeIdx = headers.findIndex(h => h.toLowerCase().includes('type'));
+        const idIdx = headers.findIndex(h => h.toLowerCase().includes('id'));
+        const dateIdx = headers.findIndex(h => h.toLowerCase().includes('date'));
+        const nameIdx = headers.findIndex(h => h.toLowerCase().includes('name') || h.toLowerCase().includes('item'));
+        const weightIdx = headers.findIndex(h => h.toLowerCase().includes('weight') || h.toLowerCase().includes('qty'));
+        const unitIdx = headers.findIndex(h => h.toLowerCase().includes('unit'));
+        const priceIdx = headers.findIndex(h => h.toLowerCase().includes('price'));
 
-        if (!isNewFormat && !isOldFormat) {
-          console.error('Invalid CSV format.');
+        if (typeIdx === -1 || idIdx === -1 || nameIdx === -1) {
+          console.error('Invalid CSV format: Missing required columns.');
           return;
         }
 
@@ -370,73 +376,19 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImp
 
         // Skip header
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',').map(c => c.trim());
+          const cols = lines[i].split(delimiter).map(c => c.trim());
+          if (cols.length < headers.length) continue;
           
-          if (isNewFormat) {
-            if (cols.length < 7) continue;
-            const [type, id, dateStr, name, weightStr, unit, priceStr] = cols;
+          const type = cols[typeIdx].toLowerCase();
+          const id = cols[idIdx];
+          const dateStr = cols[dateIdx];
+          const name = cols[nameIdx];
+          const weightStr = cols[weightIdx];
+          const unit = cols[unitIdx];
+          const priceStr = cols[priceIdx];
             
-            if (type === 'Purchase') {
-              const price = parseFloat(priceStr) || 0;
-              let timestamp = Date.now();
-              if (dateStr.includes('/')) {
-                const [d, m, y] = dateStr.split('/');
-                const parsedDate = new Date(`${y}-${m}-${d}`);
-                if (!isNaN(parsedDate.getTime())) timestamp = parsedDate.getTime();
-              }
-
-              if (!ordersMap.has(id)) {
-                ordersMap.set(id, { id, timestamp, items: [], totalPrice: 0 });
-              }
-              const order = ordersMap.get(id)!;
-              order.items.push({
-                id: getSafeId() + i,
-                name,
-                weight: weightStr,
-                unit,
-                price,
-                type: 'solid'
-              });
-              order.totalPrice += price;
-            } else if (type === 'Dairy') {
-              const isMilk = name.toLowerCase() === 'milk';
-              const qty = parseFloat(weightStr) || 0;
-              const totalPrice = parseFloat(priceStr) || 0;
-              
-              let date = new Date().toISOString().split('T')[0];
-              if (dateStr.includes('/')) {
-                const [d, m, y] = dateStr.split('/');
-                date = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-              }
-
-              let existingRecord = newDairyRecords.find(r => r.id === id);
-              if (!existingRecord) {
-                existingRecord = {
-                  id,
-                  date,
-                  milkQty: 0,
-                  milkPrice: 0,
-                  waterQty: 0,
-                  waterPrice: 0,
-                  sellerId: ''
-                };
-                newDairyRecords.push(existingRecord);
-              }
-
-              if (isMilk) {
-                existingRecord.milkQty = unit === 'ml' ? qty / 1000 : qty;
-                existingRecord.milkPrice = existingRecord.milkQty > 0 ? totalPrice / existingRecord.milkQty : 0;
-              } else {
-                existingRecord.waterQty = qty;
-                existingRecord.waterPrice = qty > 0 ? totalPrice / qty : 0;
-              }
-            }
-          } else {
-            // Old format
-            if (cols.length < 6) continue;
-            const [orderId, dateStr, name, weight, unit, priceStr] = cols;
+          if (type.includes('purchase')) {
             const price = parseFloat(priceStr) || 0;
-            
             let timestamp = Date.now();
             if (dateStr.includes('/')) {
               const [d, m, y] = dateStr.split('/');
@@ -444,19 +396,53 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImp
               if (!isNaN(parsedDate.getTime())) timestamp = parsedDate.getTime();
             }
 
-            if (!ordersMap.has(orderId)) {
-              ordersMap.set(orderId, { id: orderId, timestamp, items: [], totalPrice: 0 });
+            if (!ordersMap.has(id)) {
+              ordersMap.set(id, { id, timestamp, items: [], totalPrice: 0 });
             }
-            const order = ordersMap.get(orderId)!;
+            const order = ordersMap.get(id)!;
             order.items.push({
               id: getSafeId() + i,
               name,
-              weight,
+              weight: weightStr,
               unit,
               price,
               type: 'solid'
             });
             order.totalPrice += price;
+          } else if (type.includes('dairy')) {
+            const isMilk = name.toLowerCase() === 'milk';
+            const qty = parseFloat(weightStr) || 0;
+            const totalPrice = parseFloat(priceStr) || 0;
+            
+            let date = new Date().toISOString().split('T')[0];
+            if (dateStr.includes('/')) {
+              const [d, m, y] = dateStr.split('/');
+              date = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+            }
+
+            let existingRecord = newDairyRecords.find(r => r.id === id);
+            if (!existingRecord) {
+              existingRecord = {
+                id,
+                date,
+                milkQty: 0,
+                milkPrice: 0,
+                waterQty: 0,
+                waterPrice: 0,
+                milkSellerId: '',
+                waterSellerId: '',
+                notes: ''
+              };
+              newDairyRecords.push(existingRecord);
+            }
+
+            if (isMilk) {
+              existingRecord.milkQty = unit === 'ml' ? qty / 1000 : qty;
+              existingRecord.milkPrice = existingRecord.milkQty > 0 ? totalPrice / existingRecord.milkQty : 0;
+            } else {
+              existingRecord.waterQty = qty;
+              existingRecord.waterPrice = qty > 0 ? totalPrice / qty : 0;
+            }
           }
         }
 
@@ -492,15 +478,14 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImp
         {/* Import Button for Empty State */}
         {onImportHistory && (
           <div className="pt-4">
-             <input type="file" accept=".csv" ref={fileInputRef} onChange={handleImport} className="hidden" />
-             <button 
-               onClick={() => fileInputRef.current?.click()}
-               className={`flex items-center gap-2 mx-auto px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+             <label 
+               className={`cursor-pointer flex items-center justify-center w-max gap-2 mx-auto px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
                  theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                }`}
              >
+               <input type="file" accept=".csv,text/csv,text/plain,*/*" ref={fileInputRef} onChange={handleImport} className="hidden" />
                <Download size={14} /> Import History CSV
-             </button>
+             </label>
           </div>
         )}
       </div>
@@ -521,17 +506,14 @@ const Insights: React.FC<InsightsProps> = ({ theme, history, dairyRecords, onImp
         </h2>
         <div className="flex gap-2">
           {onImportHistory && (
-            <>
-              <input type="file" accept=".csv" ref={fileInputRef} onChange={handleImport} className="hidden" />
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-3 py-1.5 rounded-full border transition-colors ${
-                  theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <Download size={12} /> Import
-              </button>
-            </>
+            <label 
+              className={`cursor-pointer flex items-center gap-1.5 text-[10px] font-black uppercase px-3 py-1.5 rounded-full border transition-colors ${
+                theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <input type="file" accept=".csv,text/csv,text/plain,*/*" ref={fileInputRef} onChange={handleImport} className="hidden" />
+              <Download size={12} /> Import
+            </label>
           )}
           <button onClick={exportToCSV} className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-3 py-1.5 rounded-full border transition-colors ${
             theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
