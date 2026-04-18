@@ -111,16 +111,7 @@ const Dairy: React.FC<DairyProps> = ({
     if (editingRecordId) {
       onUpdate(records.map(r => r.id === editingRecordId ? recordData : r));
     } else {
-      // Check if record for this date already exists
-      const existingIdx = records.findIndex(r => r.date === date);
-      if (existingIdx !== -1) {
-        // Auto-overwrite for now to avoid confirm() which fails in iframes
-        const updated = [...records];
-        updated[existingIdx] = recordData;
-        onUpdate(updated);
-      } else {
-        onUpdate([...records, recordData]);
-      }
+      onUpdate([...records, recordData]);
     }
     resetEntryForm();
   };
